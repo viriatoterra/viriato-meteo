@@ -34,9 +34,10 @@ h1,h2{font-family:var(--display);font-weight:700;letter-spacing:.01em;margin:0;t
 .brand .app{font:700 13px/1 var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
 .brand h1{font-size:clamp(26px,3.4vw,40px);line-height:1.02;letter-spacing:.005em}
 .brand .sub{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
-.sponsors{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px}
-.sponsors span{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
-.sponsors img{height:58px;width:auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:4px 8px;display:block}
+.sponsors{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px}
+.sponsors span{flex-basis:100%;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.sponsors img{height:104px;max-width:100%;width:auto;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 14px;display:block;object-fit:contain}
+.gear-btns{display:flex;gap:6px;flex-wrap:wrap}
 .gear-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .gear-head button{font-size:12px;padding:4px 8px}
 .gear{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin-top:8px}
@@ -143,7 +144,8 @@ dialog a.btn{display:inline-block;text-decoration:none;font-weight:600;border-ra
   .hud #compass{width:60px;height:60px}
   .hud #hudIcon svg{width:40px;height:40px}
   .brand h1{font-size:26px}
-  .sponsors img{height:46px}
+  .sponsors{gap:10px}
+  .sponsors img{height:78px;padding:6px 10px;max-width:calc(50% - 5px)}
   form{gap:8px}
   form label{flex:1 1 40%}
   form input{width:100%}
@@ -218,7 +220,7 @@ dialog a.btn{display:inline-block;text-decoration:none;font-weight:600;border-ra
       <div class="stats" id="stats"></div>
     </div>
     <div>
-      <div class="gear-head"><h2>Material recomendado</h2><button type="button" id="gearEdit">Elegir material</button></div>
+      <div class="gear-head"><h2>Material recomendado</h2><span class="gear-btns"><button type="button" id="gearEdit" hidden>Elegir material</button><button type="button" id="gearSave" class="primary" hidden>Guardar en la ficha</button></span></div>
       <div class="note" id="gearNote">Lo que conviene llevar. Con borde rojo, lo que añade la previsión del tiempo.</div>
       <div class="gear" id="gear"></div>
     </div>
@@ -400,10 +402,15 @@ function autoGear(){ // lo que añade la previsión para la franja del recorrido
   if(dur>=150)out.comida=`${fmtDur(dur)}`;
   return out;}
 function renderGear(){
-  const el=document.getElementById('gear'),auto=autoGear(),base=S.eq||[];
+  const el=document.getElementById('gear'),sheet=!!S.routeId,canEdit=!sheet||S.org,base=S.eq||[];
+  if(!canEdit)gearEditing=false;
+  const auto=sheet?{}:autoGear(); // en las fichas publicadas manda solo el material del organizador
   el.classList.toggle('edit',gearEditing);
-  document.getElementById('gearEdit').textContent=gearEditing?'Listo':'Elegir material';
-  document.getElementById('gearNote').textContent=gearEditing?'Toca para marcar o quitar. Se guarda en el enlace al compartir.':'Lo que conviene llevar. Con borde rojo, lo que añade la previsión del tiempo.';
+  const eb=document.getElementById('gearEdit');eb.hidden=!canEdit;eb.textContent=gearEditing?'Listo':'Elegir material';
+  document.getElementById('gearSave').hidden=!(S.org&&sheet);
+  document.getElementById('gearNote').textContent=gearEditing?(sheet?'Toca para marcar o quitar. Después pulsa «Guardar en la ficha» para que lo vean los senderistas.':'Toca para marcar o quitar. Se guarda en el enlace al compartir.')
+    :sheet?(S.org?'Modo organizador: este es el material de la ficha publicada.':'Material que recomienda la organización para esta ruta.')
+    :'Lo que conviene llevar. Con borde rojo, lo que añade la previsión del tiempo.';
   const ids=gearEditing?Object.keys(GEAR):[...base.filter(id=>GEAR[id]),...Object.keys(auto).filter(id=>!base.includes(id))];
   el.innerHTML=ids.map(id=>{const isAuto=!gearEditing&&!base.includes(id);
     return `<div class="gi${isAuto?' auto':''}${gearEditing&&base.includes(id)?' on':''}" data-id="${id}" ${gearEditing?'role="button" tabindex="0"':''}>${gearSvg(id)}<span>${GEAR[id][0]}</span>${isAuto?`<small>${auto[id]}</small>`:''}</div>`;}).join('')
@@ -412,6 +419,18 @@ function renderGear(){
     g.onclick=t;g.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();t();}};});
 }
 document.getElementById('gearEdit').onclick=()=>{gearEditing=!gearEditing;renderGear();};
+// modo organizador: solo existe si la web se abre con el editor local de este Mac (editar.py)
+fetch('api/ping').then(r=>r.ok?r.json():null).then(async j=>{if(!j||!j.editor)return;S.org=true;renderGear();
+  const f=await (await fetch('api/fichas')).json();if(!f.length)return;const g=document.createElement('optgroup');g.label='Fichas publicadas';
+  g.innerHTML=f.map(x=>`<option value="f:${x.id}">${String(x.n).replace(/[<&]/g,'')}</option>`).join('');savedSel.appendChild(g);}).catch(()=>{});
+document.getElementById('gearSave').onclick=async e=>{const b=e.currentTarget;if(!S.routeId)return;b.disabled=true;b.textContent='Publicando…';
+  try{const r=await fetch('api/ficha/'+S.routeId,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({eq:S.eq||[],d:dateIn.value,h:startIn.value,t:goalIn.value,m:BM_KEY})});
+    const j=await r.json();if(!r.ok)throw new Error(j.error||r.status);
+    S.routeCfg={...S.routeCfg,...j.ficha};gearEditing=false;renderGear();
+    setStatus(j.pushed?'Ficha publicada. En 1–2 minutos la verán los senderistas.':'Ficha guardada en este Mac, pero no se pudo publicar: '+(j.detail||''),!j.pushed);setTimeout(()=>setStatus(''),6000);}
+  catch(err){setStatus('No se pudo guardar la ficha: '+err.message,true);}
+  b.disabled=false;b.textContent='Guardar en la ficha';};
 const parseEq=v=>(Array.isArray(v)?v:String(v||'').split(',')).map(x=>x.trim()).filter(x=>GEAR[x]);
 
 // ---------- patrocinadores ----------
@@ -893,7 +912,8 @@ async function applySettings(o){
   if(!pts.some(p=>p.ele))pts.forEach(p=>p.ele=null);
   await loadRoute(pts,o.n);slider.value=0;await run();
 }
-savedSel.onchange=async()=>{const i=savedSel.value;delBtn.hidden=i==='';if(i==='')return;
+savedSel.onchange=async()=>{const i=savedSel.value;delBtn.hidden=i===''||i.startsWith('f:');if(i==='')return;
+  if(i.startsWith('f:')){try{await openRouteSheet(i.slice(2));}catch(e){setStatus(e.message,true);}return;}
   try{await applySettings(getSaved()[+i]);}catch(e){setStatus(e.message,true);}};
 delBtn.onclick=()=>{const i=savedSel.value;if(i==='')return;const a=getSaved();
   if(!confirm(`¿Quitar «${a[+i].n}» de Mis rutas?`))return;a.splice(+i,1);putSaved(a);renderSaved();};
@@ -934,6 +954,7 @@ async function openRouteSheet(id,over={}){
   await loadRoute(pts,c.n||name||id);slider.value=0;await run();
 }
 
+addEventListener('hashchange',()=>location.reload()); // un enlace nuevo en la misma pestaña siempre arranca de cero
 // arranque: ficha (#ruta=…), ruta del enlace (#r=… o #gpx=archivo) o recorrido de ejemplo
 (async()=>{const q=new URLSearchParams(location.hash.slice(1));
   try{
