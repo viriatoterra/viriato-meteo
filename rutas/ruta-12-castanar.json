@@ -2,13 +2,23 @@
   "n": "Ruta 12 · Castañar en apogeo",
   "gpx": "rutas/ruta-12-castanar.gpx",
   "d": "2026-10-18",
-  "h": "09:00",
-  "t": "3:30:00",
-  "m": "topo",
-  "eq": ["botas", "bastones", "mochila", "agua", "comida", "chubasquero", "abrigo", "movil", "documentacion"],
+  "h": "10:00",
+  "t": "0:38:48",
+  "m": "calles",
+  "eq": [
+    "botas",
+    "agua",
+    "movil"
+  ],
   "logosTitle": "Patrocinan",
   "logos": [
-    { "src": "logos/ayto-pepino.png", "alt": "Ayuntamiento de Pepino" },
-    { "src": "logos/viriato-terra.png", "alt": "Viriato Terra" }
+    {
+      "src": "logos/ayto-pepino.png",
+      "alt": "Ayuntamiento de Pepino"
+    },
+    {
+      "src": "logos/viriato-terra.png",
+      "alt": "Viriato Terra"
+    }
   ]
 }
