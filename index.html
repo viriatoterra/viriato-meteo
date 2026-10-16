@@ -416,7 +416,7 @@ const parseEq=v=>(Array.isArray(v)?v:String(v||'').split(',')).map(x=>x.trim()).
 
 // ---------- patrocinadores ----------
 function renderSponsors(){const el=document.getElementById('sponsors'),L=S.logos||[];el.hidden=!L.length;
-  el.innerHTML=L.length?`<span>${(S.logosTitle||'Organizan').replace(/[<&]/g,'')}</span>`+L.map(l=>`<img src="${encodeURI(l.src)}" alt="${String(l.alt||'').replace(/["<&]/g,'')}" loading="lazy">`).join(''):'';}
+  el.innerHTML=L.length?`<span>${(S.logosTitle||'Organizan').replace(/[<&]/g,'')}</span>`+L.map(l=>`<img src="${encodeURI(l.src)}" alt="${String(l.alt||'').replace(/["<&]/g,'')}">`).join(''):'';}
 
 // ---------- rutas en el enlace (polyline lat/lon/altitud) ----------
 function simplify(pts,maxN=450){ // Douglas-Peucker en metros, subiendo tolerancia hasta caber
