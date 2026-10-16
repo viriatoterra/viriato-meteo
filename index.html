@@ -735,7 +735,7 @@ async function loadRoute(pts,name){
 }
 let reqId=0;
 async function run(){
-  const pace=parsePace(paceIn.value);if(!pace||pace<2||pace>20){setStatus('Ritmo o tiempo no válido. Usa 5:00 (min/km) o 1:45:00 (h:mm:ss).',true);return;}
+  const pace=parsePace(paceIn.value);if(!pace||pace<2||pace>60){setStatus('Ritmo o tiempo no válido. Usa 5:00 (min/km) o 1:45:00 (h:mm:ss).',true);return;}
   const [hh,mm]=startIn.value.split(':').map(Number);
   S.pace=pace;S.startMin=hh*60+mm;
   const needFetch=!S.wx||S.date!==dateIn.value;S.date=dateIn.value;
