@@ -541,7 +541,7 @@ function frame(){
     for(const p of particles){const w=FX.wind[p.k];if(!w||w.spd<0.3){p.age++;if(p.age>p.life)spawn(p,box);continue;}
       const dm=(w.spd/9)*mpp;p.lat+=w.v/w.spd*dm/111320;p.lon+=w.u/w.spd*dm/(111320*Math.cos(rad(p.lat)));
       const s=map.project([p.lon,p.lat]);
-      if(p.px&&s.y>0)tctx.moveTo(p.px.x,p.px.y),tctx.lineTo(s.x,s.y);
+      if(p.px&&s.y>0&&Math.abs(s.x-p.px.x)+Math.abs(s.y-p.px.y)<40)tctx.moveTo(p.px.x,p.px.y),tctx.lineTo(s.x,s.y);
       p.px=s;p.age++;
       if(p.age>p.life||s.x<-20||s.x>W+20||s.y<-20||s.y>H+20)spawn(p,box);}
     tctx.stroke();
