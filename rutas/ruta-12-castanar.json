@@ -2,13 +2,19 @@
   "n": "Ruta 12 · Castañar en apogeo",
   "gpx": "rutas/ruta-12-castanar.gpx",
   "d": "2026-10-18",
-  "h": "10:00",
-  "t": "0:38:48",
-  "m": "calles",
+  "h": "09:00",
+  "t": "3:30:00",
+  "m": "topo",
   "eq": [
     "botas",
+    "bastones",
+    "mochila",
     "agua",
-    "movil"
+    "comida",
+    "chubasquero",
+    "abrigo",
+    "movil",
+    "documentacion"
   ],
   "logosTitle": "Patrocinan",
   "logos": [
