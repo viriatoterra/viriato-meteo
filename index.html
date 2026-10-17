@@ -5,7 +5,15 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Viriato Méteo</title>
 <meta name="description" content="Viento, sol y lluvia a lo largo de tu recorrido, a la hora a la que pasarás por cada punto.">
-<meta name="theme-color" content="#1f5f8b">
+<meta name="theme-color" content="#16507a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Viriato Méteo">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.0/dist/maplibre-gl.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -38,6 +46,25 @@ h1,h2{font-family:var(--display);font-weight:700;letter-spacing:.01em;margin:0;t
 .sponsors span{flex-basis:100%;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
 .sponsors img{height:104px;max-width:100%;width:auto;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 14px;display:block;object-fit:contain}
 .gear-btns{display:flex;gap:6px;flex-wrap:wrap}
+.brand .app{display:flex;align-items:center;gap:6px}
+.brand .app img{width:20px;height:20px;border-radius:5px}
+.wxage{font-size:12px;color:var(--muted)}
+.wxage.off{color:var(--head);font-weight:600}
+.offbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}
+.offbar button{display:inline-flex;align-items:center;gap:6px;font-weight:600}
+.offbar button svg{width:18px;height:18px}
+.offbar .note{margin:0}
+.gpsbtn{position:absolute;left:12px;top:58px;z-index:5;display:inline-flex;align-items:center;gap:6px;font-weight:600;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 11px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.gpsbtn svg{width:18px;height:18px}
+.gpsbtn.on{background:var(--accent);color:var(--surface);border-color:var(--accent)}
+.gpscard{position:absolute;left:12px;right:12px;bottom:28px;z-index:6;max-width:440px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:0 6px 20px rgba(0,0,0,.18);display:flex;flex-direction:column;gap:4px}
+.gpscard .big{font:700 30px/1 var(--display);font-variant-numeric:tabular-nums}
+.gpscard .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.gpscard .row b{color:var(--ink)}
+.gpscard .warn{color:var(--head);font-weight:600;font-size:13px}
+.gpscard .acts{display:flex;gap:6px;margin-top:4px}
+.gpscard .acts button{font-size:12px;padding:4px 9px}
+.me{width:20px;height:20px;border-radius:50%;background:#2b7de9;border:3px solid #fff;box-shadow:0 0 0 2px #2b7de9,0 0 0 10px rgba(43,125,233,.25)}
 .gear-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .gear-head button{font-size:12px;padding:4px 8px}
 .gear{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin-top:8px}
@@ -153,17 +180,21 @@ dialog a.btn{display:inline-block;text-decoration:none;font-weight:600;border-ra
   .panel{border-left:0;border-top:1px solid var(--line)}
   #clock{min-width:0;flex-basis:100%}
   .legend{display:none}
+  .gpscard{bottom:12px;max-width:none}
+  .gpsbtn{top:12px;left:auto;right:12px}
 }
 </style>
 </head>
 <body>
 <header class="bar">
   <div class="brand">
-    <div class="app">Viriato Méteo</div>
+    <div class="app"><img src="icons/icon-192.png" alt="">Viriato Méteo</div>
     <h1 id="routeTitle">Recorrido de ejemplo</h1>
     <div class="sub" id="courseName"></div>
     <div class="sub" id="setupSum"></div>
+    <div class="wxage" id="wxAge"></div>
     <div class="sponsors" id="sponsors" hidden></div>
+    <div class="offbar"><button type="button" id="offBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 20h14"/></svg><span>Guardar para usar sin cobertura</span></button><span class="note" id="offInfo"></span></div>
   </div>
   <button type="button" id="setupBtn" class="setupbtn" aria-expanded="false">Ajustes</button>
   <form id="controls">
@@ -196,6 +227,8 @@ dialog a.btn{display:inline-block;text-decoration:none;font-weight:600;border-ra
         <option value="topo">Topográfico</option>
       </select>
     </label>
+    <button type="button" class="gpsbtn" id="gpsBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg><span>Dónde estoy</span></button>
+    <div class="gpscard" id="gpsCard" hidden></div>
     <div class="hud" id="hud" hidden>
       <span id="hudIcon"></span>
       <svg id="compass" width="84" height="84" viewBox="-42 -42 84 84" aria-label="Brújula: viento y sol"></svg>
@@ -473,21 +506,52 @@ const BASEMAPS={
     [ESRI+'Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}',ESRI+'Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}']),shade:.12,darkBg:true},
   topo:{style:raster('topo',['a','b','c'].map(c=>`https://${c}.tile.opentopomap.org/{z}/{x}/{y}.png`),'© OpenTopoMap (CC-BY-SA) · © OpenStreetMap',17),shade:.15},
 };
+// todo lo del mapa se pide con vmc:// para guardarlo en el dispositivo y poder usarlo sin cobertura
+const MAPC='vm-map',MAPOFF='vm-map-off',hasCaches='caches' in self;let mapPuts=0;
+const vmc=u=>'vmc://'+u;
+const withTimeout=ms=>{try{return AbortSignal.timeout(ms);}catch{return undefined;}};
+async function cachedResponse(url,signal){
+  if(hasCaches){const hit=await caches.match(url);if(hit)return hit;}
+  const res=await fetch(url,{signal});
+  if(res.ok&&hasCaches){const c=await caches.open(MAPC);await c.put(url,res.clone());
+    if(++mapPuts%300===0){const ks=await c.keys();for(const k of ks.slice(0,Math.max(0,ks.length-3000)))c.delete(k);}}
+  return res;}
+async function freshJSON(url){ // primero la red; sin cobertura, lo guardado
+  try{const r=await fetch(url,{signal:withTimeout(6000)});if(r.ok){if(hasCaches)(await caches.open(MAPC)).put(url,r.clone());return await r.json();}}catch{}
+  const hit=hasCaches&&await caches.match(url);if(hit)return hit.json();throw new Error('Este mapa no está guardado para usar sin cobertura.');}
+maplibregl.addProtocol('vmc',async(params,abort)=>{const url=params.url.slice(6);
+  const res=await cachedResponse(url,abort.signal);if(!res.ok)throw new Error('HTTP '+res.status);
+  if(params.type==='json')return{data:await res.json()};if(params.type==='string')return{data:await res.text()};
+  return{data:await res.arrayBuffer()};});
+async function buildStyle(key){
+  const b=BASEMAPS[key];
+  if(typeof b.style!=='string'){const st=JSON.parse(JSON.stringify(b.style));for(const src of Object.values(st.sources))if(src.tiles)src.tiles=src.tiles.map(vmc);return st;}
+  const st=await freshJSON(b.style);
+  for(const [id,src] of Object.entries(st.sources)){
+    if(src.url){const tj=await freshJSON(src.url);const {url,...rest}=src;const ns={...rest,tiles:tj.tiles.map(vmc),minzoom:tj.minzoom??0,maxzoom:tj.maxzoom??14};
+      if(tj.attribution||src.attribution)ns.attribution=tj.attribution||src.attribution;if(tj.bounds)ns.bounds=tj.bounds;st.sources[id]=ns;}
+    else if(src.tiles)src.tiles=src.tiles.map(vmc);}
+  if(typeof st.sprite==='string')st.sprite=vmc(st.sprite);else if(Array.isArray(st.sprite))st.sprite=st.sprite.map(x=>({...x,url:vmc(x.url)}));
+  if(st.glyphs)st.glyphs=vmc(st.glyphs);
+  return st;}
 const bmSel=document.getElementById('basemap');
 let BM_KEY='calles';try{const v=localStorage.getItem('vm-basemap');if(BASEMAPS[v])BM_KEY=v;}catch{}
 {const hm=new URLSearchParams(location.hash.slice(1)).get('m');if(BASEMAPS[hm])BM_KEY=hm;} // el mapa del enlace manda
 bmSel.value=BM_KEY;
-const map=new maplibregl.Map({container:'map',style:BASEMAPS[BM_KEY].style,
+const map=new maplibregl.Map({container:'map',style:{version:8,name:'vm-empty',sources:{},layers:[]},
   center:[-5.745,41.503],zoom:13.5,pitch:60,bearing:-20,maxPitch:65,attributionControl:{compact:true}});
 map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'bottom-right');
 let styleReady;const mapReady=new Promise(r=>styleReady=r);
 const EMPTY={type:'FeatureCollection',features:[]};
-const DEM={type:'raster-dem',tiles:['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],tileSize:256,encoding:'terrarium',maxzoom:14,
+const DEM_URL='https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
+const DEM={type:'raster-dem',tiles:[vmc(DEM_URL)],tileSize:256,encoding:'terrarium',maxzoom:14,
   attribution:'Relieve: Mapzen Terrain Tiles'};
 // relieve 3D en vistas amplias; de cerca mandan los edificios (el relieve a zoom alto falla en algunos navegadores)
-const terr=()=>{if(!map.getSource('dem'))return;const want=map.getZoom()<14.8;if(want!==!!map.getTerrain())map.setTerrain(want?{source:'dem',exaggeration:1.6}:null);};
-map.on('zoomend',terr);map.on('zoom',()=>{if(map.getZoom()>=14.8&&map.getTerrain())map.setTerrain(null);});
+const TERR_MAXZ=13.6; // en montaña, más cerca la cámara acaba dentro del relieve y el mapa sale gris
+const terr=()=>{if(!map.getSource('dem'))return;const want=map.getZoom()<TERR_MAXZ;if(want!==!!map.getTerrain())map.setTerrain(want?{source:'dem',exaggeration:1.3}:null);};
+map.on('zoomend',terr);map.on('zoom',()=>{if(map.getZoom()>=TERR_MAXZ&&map.getTerrain())map.setTerrain(null);});
 map.on('style.load',()=>{
+  if(map.getStyle().name==='vm-empty')return;
   map.addSource('dem',DEM);map.addSource('dem-hs',DEM);
   const firstSymbol=map.getStyle().layers.find(l=>l.type==='symbol')?.id;
   map.addLayer({id:'hillshade',type:'hillshade',source:'dem-hs',paint:{'hillshade-exaggeration':BASEMAPS[BM_KEY].shade,'hillshade-illumination-anchor':'map','hillshade-shadow-color':'#3a4650'}},firstSymbol);
@@ -501,8 +565,10 @@ map.on('style.load',()=>{
   // al cambiar de mapa, volver a pintar recorrido, tramos críticos y cielo
   if(S.wx&&S.passHead){colorRoute(modeSel.value==='now'?S.head:S.passHead);map.getSource('hot').setData(S.hotData||EMPTY);FX.cond=null;update();}
 });
-bmSel.onchange=()=>{BM_KEY=bmSel.value;try{localStorage.setItem('vm-basemap',BM_KEY);}catch{}
-  map.setTerrain(null);map.setStyle(BASEMAPS[BM_KEY].style,{diff:false});};
+async function applyBasemap(){try{const st=await buildStyle(BM_KEY);try{if(map.getTerrain())map.setTerrain(null);}catch{}map.setStyle(st,{diff:false});}
+  catch(e){setStatus(e.message,true);}}
+bmSel.onchange=()=>{BM_KEY=bmSel.value;try{localStorage.setItem('vm-basemap',BM_KEY);}catch{}applyBasemap();};
+applyBasemap();
 let markers=[],windMarkers=[];
 const runner=new maplibregl.Marker({element:Object.assign(document.createElement('div'),{className:'runner'})});
 
@@ -561,13 +627,28 @@ async function fetchWeather(){
   if(!archive) vars.push('precipitation_probability');
   const q=new URLSearchParams({latitude:S.samples.map(s=>s.lat).join(','),longitude:S.samples.map(s=>s.lon).join(','),
     hourly:vars.join(','),wind_speed_unit:'kmh',timezone:'auto',start_date:S.date,end_date:addDays(S.date,1)});
-  const res=await fetch(`${base}?${q}`);
-  if(!res.ok){let m='';try{m=(await res.json()).reason}catch{}throw new Error('Open-Meteo no respondió: '+(m||res.status));}
-  let j=await res.json();if(!Array.isArray(j))j=[j];
+  const key=`${base}?${q}`;let j=null,err=null;
+  try{const res=await fetch(key,{signal:withTimeout(10000)});
+    if(res.ok){j=await res.json();saveWx(key,j);S.wxTime=Date.now();S.wxOffline=false;}
+    else{let m='';try{m=(await res.json()).reason}catch{}err='Open-Meteo no respondió: '+(m||res.status);}}
+  catch{err='Sin conexión';}
+  if(!j){const st=loadWx(key);if(!st)throw new Error(err==='Sin conexión'?'Sin cobertura y sin previsión guardada para esta ruta. Ábrela con conexión y pulsa «Guardar para usar sin cobertura».':err);
+    j=st.j;S.wxTime=st.t;S.wxOffline=true;}
+  if(!Array.isArray(j))j=[j];
   S.wx=j.map(loc=>{const h=loc.hourly;const sp=h.wind_speed_10m,dr=h.wind_direction_10m;
     return {...h,u:sp.map((v,i)=>-v*Math.sin(rad(dr[i]))),v:sp.map((v,i)=>-v*Math.cos(rad(dr[i])))};});
   S.wxMeta={archive,ahead,tz:j[0].timezone,off:j[0].utc_offset_seconds||0};
 }
+function loadWxAll(){try{return JSON.parse(localStorage.getItem('vm-wx')||'{}');}catch{return{};}}
+function saveWx(key,j){const all=loadWxAll();all[key]={t:Date.now(),j};
+  const ks=Object.keys(all).sort((a,b)=>all[b].t-all[a].t);for(const k of ks.slice(6))delete all[k];
+  try{localStorage.setItem('vm-wx',JSON.stringify(all));}catch{try{localStorage.setItem('vm-wx',JSON.stringify({[key]:all[key]}));}catch{}}}
+function loadWx(key){return loadWxAll()[key]||null;}
+function updateWxAge(){const el=document.getElementById('wxAge');if(!S.wxTime){el.textContent='';return;}
+  const d=new Date(S.wxTime),same=d.toDateString()===new Date().toDateString();
+  const when=(same?'hoy':d.toLocaleDateString('es-ES',{weekday:'short',day:'numeric'}))+' a las '+d.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+  const off=S.wxOffline||!navigator.onLine;el.classList.toggle('off',off);
+  el.textContent=off?`Sin cobertura · previsión guardada ${when}`:`Previsión actualizada ${when}`;}
 function at(k,key,m){const a=S.wx[k][key];if(!a)return null;const f=m/60,i=Math.floor(f),t=f-i;
   if(i<0)return a[0];if(i>=a.length-1)return a[a.length-1];const x=a[i],y=a[i+1];
   if(x==null||y==null)return x??y;return x+(y-x)*t;}
@@ -822,6 +903,7 @@ goalIn.addEventListener('change',()=>{const g=parseDur(goalIn.value);if(g)goalIn
 function parsePace(s){const m=String(s).trim().match(/^(\d+)(?:[:'.,](\d{1,2}))?$/);if(!m)return null;return +m[1]+(m[2]?+m[2].padEnd(2,'0')/60:0);}
 
 async function loadRoute(pts,name){
+  if(typeof gpsWatch!=='undefined'&&gpsWatch!=null)stopGps();sufAsc=null;
   S.route=resample(pts);S.total=S.route[S.route.length-1].d;S.name=name;S.wx=null;
   S.hasEle=pts.filter(p=>p.ele!=null).length>pts.length/2;
   S.code=encodeRoute(simplify(S.route.map(p=>({lat:p.lat,lon:p.lon,ele:S.hasEle?p.ele:null}))));
@@ -836,13 +918,14 @@ async function run(){
   const pace=parsePace(paceIn.value);if(!pace||pace<2||pace>60){setStatus('Ritmo o tiempo no válido. Usa 5:00 (min/km) o 1:45:00 (h:mm:ss).',true);return;}
   const [hh,mm]=startIn.value.split(':').map(Number);
   S.pace=pace;S.startMin=hh*60+mm;
-  const needFetch=!S.wx||S.date!==dateIn.value;S.date=dateIn.value;
+  if(S.live)S.startMin=S.live.startMin; // con el GPS, el horario se ajusta a tu avance real
+  const needFetch=!S.wx||S.date!==dateIn.value||S.forceFetch;S.date=dateIn.value;S.forceFetch=false;
   const id=++reqId;
   try{
     if(needFetch){setStatus('Consultando el tiempo…');await fetchWeather();if(id!==reqId)return;}
     await mapReady;setStatus('');
     slider.max=duration().toFixed(2);if(+slider.value>+slider.max)slider.value=0;
-    summarize();colorRoute(S.passHead);S.head=S.passHead;update();updateSetupSum();
+    summarize();colorRoute(S.passHead);S.head=S.passHead;update();updateSetupSum();updateWxAge();updateOffInfo();
   }catch(e){if(id===reqId)setStatus(e.message,true);}
 }
 
@@ -951,12 +1034,130 @@ async function openRouteSheet(id,over={}){
   if(o.d&&/^\d{4}-\d{2}-\d{2}$/.test(o.d)&&daysFromToday(o.d)>=-60)dateIn.value=o.d;
   if(o.m&&BASEMAPS[o.m]&&o.m!==BM_KEY){await mapReady;bmSel.value=o.m;bmSel.onchange();}
   S.routeId=id;S.routeCfg=c;S.eq=parseEq(o.eq);S.logos=(c.logos||[]).filter(l=>/^[\w\-\/.]+\.(png|jpe?g|webp|svg)$/i.test(l.src||''));S.logosTitle=c.logosTitle;renderSponsors();
-  await loadRoute(pts,c.n||name||id);slider.value=0;await run();
+  await loadRoute(pts,c.n||name||id);slider.value=0;await run();updateOffInfo();
 }
+
+// ---------- refresco de la previsión ----------
+function refreshWeather(){if(!S.route||!navigator.onLine)return;S.forceFetch=true;run();}
+setInterval(refreshWeather,60*60*1000);
+setInterval(updateWxAge,60*1000);
+addEventListener('online',()=>{updateWxAge();if(!S.wxTime||Date.now()-S.wxTime>20*60*1000)refreshWeather();});
+addEventListener('offline',updateWxAge);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S.wxTime&&Date.now()-S.wxTime>30*60*1000)refreshWeather();});
+
+// ---------- guardar para usar sin cobertura ----------
+const lon2x=(lon,z)=>Math.floor((lon+180)/360*2**z);
+const lat2y=(lat,z)=>{const r=rad(lat);return Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*2**z);};
+function tileUrls(tmpls,z0,z1,b){const out=[];for(let z=z0;z<=z1;z++){const x0=lon2x(b.w,z),x1=lon2x(b.e,z),y0=lat2y(b.n,z),y1=lat2y(b.s,z);
+  for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++){const t=tmpls[(x+y)%tmpls.length];out.push(t.replace('{z}',z).replace('{x}',x).replace('{y}',y).replace('{r}',''));}}return out;}
+const offKey=()=>S.routeId?'ruta:'+S.routeId:'code:'+(S.code||'').slice(0,40);
+function offList(){try{return JSON.parse(localStorage.getItem('vm-offline')||'{}');}catch{return{};}}
+function updateOffInfo(){const o=offList()[offKey()],el=document.getElementById('offInfo');
+  el.textContent=o?`Guardada ${new Date(o.t).toLocaleDateString('es-ES',{day:'numeric',month:'short'})} a las ${new Date(o.t).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})} · mapa ${BASEMAPS[o.m]?bmSel.querySelector(`option[value="${o.m}"]`).textContent:''}`:'';
+  document.querySelector('#offBtn span').textContent=o?'Actualizar lo guardado':'Guardar para usar sin cobertura';}
+async function saveOffline(){
+  if(!hasCaches){setStatus('Este navegador no permite guardar datos para usar sin cobertura.',true);return;}
+  if(!navigator.onLine){setStatus('Necesitas conexión para guardar la ruta.',true);return;}
+  const btn=document.getElementById('offBtn');btn.disabled=true;
+  try{
+    try{await navigator.storage?.persist?.();}catch{}
+    // 1) la web, la ficha, el GPX y los logos
+    const app=await caches.open('vm-app');const page=location.href.split('#')[0];
+    const own=[page,'manifest.webmanifest','icons/icon-192.png','icons/apple-touch-icon.png',
+      'https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.0/dist/maplibre-gl.js','https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.0/dist/maplibre-gl.css'];
+    if(S.routeId){own.push(`rutas/${S.routeId}.json`,S.routeCfg.gpx,...(S.logos||[]).map(l=>l.src));}
+    await Promise.allSettled(own.map(u=>app.add(u)));
+    // 2) previsión al día
+    S.forceFetch=true;await run();
+    // 3) el mapa alrededor del recorrido
+    const b0=S.bbox,dLat=.0135,dLon=.0135/Math.cos(rad((b0.n+b0.s)/2)),b={w:b0.w-dLon,e:b0.e+dLon,s:b0.s-dLat,n:b0.n+dLat};
+    const st=await buildStyle(BM_KEY),urls=[];let rasterMax=16;
+    const strip=a=>a.map(u=>u.replace(/^vmc:\/\//,''));
+    const plan=()=>{urls.length=0;
+      for(const src of Object.values(st.sources)){if(!src.tiles)continue;const t=strip(src.tiles);
+        if(src.type==='vector')urls.push(...tileUrls(t,8,Math.min(14,src.maxzoom??14),b));
+        else if(src.type==='raster')urls.push(...tileUrls(t,9,Math.min(rasterMax,src.maxzoom??18),b));}
+      urls.push(...tileUrls([DEM_URL],8,12,b));};
+    plan();while(urls.length>2500&&rasterMax>13){rasterMax--;plan();}
+    if(typeof BASEMAPS[BM_KEY].style==='string'){urls.push(BASEMAPS[BM_KEY].style);
+      const sp=st.sprite?(typeof st.sprite==='string'?[st.sprite]:st.sprite.map(x=>x.url)):[];
+      for(const u of strip(sp))urls.push(u+'.json',u+'.png',u+'@2x.json',u+'@2x.png');
+      const stacks=new Set();for(const l of st.layers){const f=l.layout?.['text-font'];if(Array.isArray(f)&&f.every(x=>typeof x==='string'))stacks.add(f.join(','));}
+      if(st.glyphs)for(const fs of stacks)for(const r of ['0-255','256-511','8192-8447'])urls.push(strip([st.glyphs])[0].replace('{fontstack}',encodeURIComponent(fs)).replace('{range}',r));
+      const raw=await (await fetch(BASEMAPS[BM_KEY].style)).json();for(const src of Object.values(raw.sources))if(src.url)urls.push(src.url);}
+    const off=await caches.open(MAPOFF);let done=0,fail=0;const queue=[...new Set(urls)];
+    const worker=async()=>{while(queue.length){const u=queue.shift();
+      try{if(!(await off.match(u))){const hit=await caches.match(u);const r=hit||await fetch(u);if(r.ok)await off.put(u,hit?hit.clone():r.clone());else fail++;}}catch{fail++;}
+      done++;if(done%10===0||!queue.length)document.querySelector('#offBtn span').textContent=`Guardando mapa… ${done}/${done+queue.length}`;}};
+    await Promise.all(Array.from({length:6},worker));
+    const all=offList();all[offKey()]={t:Date.now(),n:S.name,m:BM_KEY,tiles:done,fail};
+    try{localStorage.setItem('vm-offline',JSON.stringify(all));}catch{}
+    setStatus(fail>done*.2?`Guardado con huecos: ${fail} partes del mapa no se pudieron descargar.`:'Listo: la ruta, el mapa y la previsión se pueden usar sin cobertura.',fail>done*.2);
+    setTimeout(()=>setStatus(''),6000);
+  }catch(e){setStatus('No se pudo guardar: '+e.message,true);}
+  btn.disabled=false;updateOffInfo();}
+document.getElementById('offBtn').onclick=saveOffline;
+if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+// ---------- GPS: dónde estás dentro de la ruta ----------
+const gpsBtn=document.getElementById('gpsBtn'),gpsCard=document.getElementById('gpsCard');
+let gpsWatch=null,gpsIdx=null,gpsMarker=null,gpsFollow=true,gpsLastSum=0,sufAsc=null;
+function buildSufAsc(){const r=S.route;sufAsc=new Float64Array(r.length);
+  for(let i=r.length-2;i>=0;i--){const up=(r[i].ele!=null&&r[i+1].ele!=null)?Math.max(0,r[i+1].ele-r[i].ele):0;sufAsc[i]=sufAsc[i+1]+up;}}
+function matchRoute(lat,lon){const r=S.route,ky=111320,kx=111320*Math.cos(rad(lat));let best=-1,bd=Infinity,fw=-1,fd=Infinity;const ds=new Float64Array(r.length);
+  for(let i=0;i<r.length;i++){const d=Math.hypot((r[i].lat-lat)*ky,(r[i].lon-lon)*kx);ds[i]=d;if(d<bd){bd=d;best=i;}
+    if(gpsIdx!=null&&i>=gpsIdx-40&&d<fd){fd=d;fw=i;}}
+  if(gpsIdx!=null&&fw>=0&&fd<bd+60)return{i:fw,d:fd}; // avanzar por la ruta, sin saltar a la otra punta en recorridos circulares
+  for(let i=0;i<r.length;i++)if(ds[i]<=bd+30)return{i,d:ds[i]}; // al empezar, el primer paso cercano (salida antes que meta)
+  return{i:best,d:bd};}
+function routeNowMin(){if(!S.wxMeta)return null;const [y,mo,d]=S.date.split('-').map(Number);return (Date.now()+S.wxMeta.off*1000-Date.UTC(y,mo-1,d))/6e4;}
+function onGps(pos){
+  const {latitude:lat,longitude:lon,accuracy:acc}=pos.coords;if(!S.route)return;
+  if(!gpsMarker)gpsMarker=new maplibregl.Marker({element:Object.assign(document.createElement('div'),{className:'me'})});
+  gpsMarker.setLngLat([lon,lat]).addTo(map);
+  if(!sufAsc||sufAsc.length!==S.route.length)buildSufAsc();
+  const m=matchRoute(lat,lon);gpsIdx=m.i;const p=S.route[m.i],left=S.total-p.d,upLeft=sufAsc[m.i];
+  const minsLeft=left/1000*S.pace,eta=new Date(Date.now()+minsLeft*6e4);
+  // si la ruta es hoy, el horario de la previsión se ajusta a tu avance real
+  const nowM=routeNowMin();let here='';
+  if(S.wx&&nowM!=null&&nowM>=0&&nowM<47*60){
+    const live=nowM-p.d/1000*S.pace;
+    if(!S.live||Math.abs(S.live.startMin-live)>2||Date.now()-gpsLastSum>5*60*1000){S.live={startMin:live};S.startMin=live;gpsLastSum=Date.now();
+      summarize();colorRoute(modeSel.value==='now'?computeHead('now',nowM):S.passHead);}
+    slider.value=Math.min(+slider.max,p.d/1000*S.pace).toFixed(2);update();
+    const x=wxAtRace(p.d/1000*S.pace);here=`<span class="row">${wxIcon(x.code,x.day,24)}<span>Ahora aquí: <b>${fmtNum(x.t)} °C</b> · viento del ${cardinal(x.w.dir)} <b>${Math.round(x.w.spd)} km/h</b></span></span>`;}
+  else{slider.value=Math.min(+slider.max,p.d/1000*S.pace).toFixed(2);update();}
+  const off=m.d>120;
+  gpsCard.hidden=false;
+  gpsCard.innerHTML=`${off?`<span class="warn">Estás a ${m.d>=1000?fmtKm(m.d)+' km':Math.round(m.d)+' m'} de la ruta. Los datos son desde el punto más cercano.</span>`:''}
+    <span class="big">Te quedan ${fmtKm(left)} km</span>
+    <span class="row"><span>Vas por el <b>km ${fmtKm(p.d)}</b> de ${fmtKm(S.total)}</span>${S.hasEle?`<span>· quedan <b>+${Math.round(upLeft)} m</b> de subida</span>`:''}</span>
+    <span class="row"><span>Llegada aprox. <b>${eta.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}</b> (${fmtDur(minsLeft)} al ritmo previsto)</span></span>
+    ${here}
+    <span class="row"><span>Precisión del GPS: ±${Math.round(acc)} m</span></span>
+    <span class="acts"><button type="button" id="gpsCenter">${gpsFollow?'Siguiéndote':'Centrar en mí'}</button><button type="button" id="gpsStop">Dejar de localizar</button></span>`;
+  document.getElementById('gpsCenter').onclick=()=>{gpsFollow=true;map.easeTo({center:[lon,lat],zoom:Math.max(map.getZoom(),15)});};
+  document.getElementById('gpsStop').onclick=stopGps;
+  if(gpsFollow)map.easeTo({center:[lon,lat],zoom:Math.max(map.getZoom(),14.5),duration:600});
+}
+function onGpsErr(e){gpsCard.hidden=false;
+  gpsCard.innerHTML=`<span class="warn">${e.code===1?'No has dado permiso para usar la ubicación. Actívalo en los ajustes del navegador.':e.code===3?'Buscando señal GPS… Si estás bajo techo, sal al exterior.':'No se pudo obtener tu posición.'}</span><span class="acts"><button type="button" id="gpsStop">Cerrar</button></span>`;
+  document.getElementById('gpsStop').onclick=stopGps;if(e.code===1)stopGps(true);}
+function startGps(){if(!navigator.geolocation){setStatus('Este móvil o navegador no da la ubicación.',true);return;}
+  gpsFollow=true;gpsIdx=null;gpsBtn.classList.add('on');gpsBtn.querySelector('span').textContent='Localizando';
+  gpsCard.hidden=false;gpsCard.innerHTML='<span class="row">Buscando señal GPS…</span>';runner.getElement().style.visibility='hidden';
+  gpsWatch=navigator.geolocation.watchPosition(onGps,onGpsErr,{enableHighAccuracy:true,maximumAge:5000,timeout:30000});}
+function stopGps(keepCard){if(gpsWatch!=null)navigator.geolocation.clearWatch(gpsWatch);gpsWatch=null;gpsMarker?.remove();gpsMarker=null;
+  gpsBtn.classList.remove('on');gpsBtn.querySelector('span').textContent='Dónde estoy';if(keepCard!==true)gpsCard.hidden=true;
+  runner.getElement().style.visibility='';if(S.live){S.live=null;run();}}
+gpsBtn.onclick=()=>gpsWatch!=null?stopGps():startGps();
+map.on('dragstart',()=>{if(gpsWatch!=null){gpsFollow=false;const b=document.getElementById('gpsCenter');if(b)b.textContent='Centrar en mí';}});
 
 addEventListener('hashchange',()=>location.reload()); // un enlace nuevo en la misma pestaña siempre arranca de cero
 // arranque: ficha (#ruta=…), ruta del enlace (#r=… o #gpx=archivo) o recorrido de ejemplo
-(async()=>{const q=new URLSearchParams(location.hash.slice(1));
+(async()=>{let h=location.hash.slice(1);
+  try{if(h&&/(^|&)(ruta|r|gpx)=/.test(h))localStorage.setItem('vm-last',h);else if(!h)h=localStorage.getItem('vm-last')||'';}catch{}
+  const q=new URLSearchParams(h);
   try{
     if(q.get('ruta')){await openRouteSheet(q.get('ruta'),Object.fromEntries(q));return;}
     if(q.get('r')){await applySettings(Object.fromEntries(q));return;}
