@@ -54,6 +54,16 @@ h1,h2{font-family:var(--display);font-weight:700;letter-spacing:.01em;margin:0;t
 .offbar button{display:inline-flex;align-items:center;gap:6px;font-weight:600}
 .offbar button svg{width:18px;height:18px}
 .offbar .note{margin:0}
+.routesbtn{font-weight:600}
+#routesDlg{max-width:min(620px,calc(100vw - 24px))}
+.rlist{display:flex;flex-direction:column;gap:8px;margin:10px 0;max-height:60vh;overflow-y:auto}
+.rlist h3{font:700 13px var(--display);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:8px 0 2px}
+.rcard{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;text-align:left;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);cursor:pointer;color:var(--ink)}
+.rcard:hover{border-color:var(--accent)}
+.rcard b{font:700 20px/1.1 var(--display)}
+.rcard span{font-size:13px;color:var(--muted)}
+.rcard .lg{grid-row:1/3;grid-column:2;display:flex;gap:6px}
+.rcard .lg img{height:40px;width:auto;background:#fff;border-radius:6px;padding:2px 4px;border:1px solid var(--line)}
 .gpsbtn{position:absolute;left:12px;top:58px;z-index:5;display:inline-flex;align-items:center;gap:6px;font-weight:600;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 11px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
 .gpsbtn svg{width:18px;height:18px}
 .gpsbtn.on{background:var(--accent);color:var(--surface);border-color:var(--accent)}
@@ -189,12 +199,12 @@ dialog a.btn{display:inline-block;text-decoration:none;font-weight:600;border-ra
 <header class="bar">
   <div class="brand">
     <div class="app"><img src="icons/icon-192.png" alt="">Viriato Méteo</div>
-    <h1 id="routeTitle">Recorrido de ejemplo</h1>
+    <h1 id="routeTitle">Elige una ruta</h1>
     <div class="sub" id="courseName"></div>
     <div class="sub" id="setupSum"></div>
     <div class="wxage" id="wxAge"></div>
     <div class="sponsors" id="sponsors" hidden></div>
-    <div class="offbar"><button type="button" id="offBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 20h14"/></svg><span>Guardar para usar sin cobertura</span></button><span class="note" id="offInfo"></span></div>
+    <div class="offbar"><button type="button" id="offBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 20h14"/></svg><span>Guardar para usar sin cobertura</span></button><span class="note" id="offInfo"></span><button type="button" class="routesbtn" id="routesBtn">Ver todas las rutas</button></div>
   </div>
   <button type="button" id="setupBtn" class="setupbtn" aria-expanded="false">Ajustes</button>
   <form id="controls">
@@ -291,6 +301,12 @@ dialog a.btn{display:inline-block;text-decoration:none;font-weight:600;border-ra
 </section>
 
 <div class="drop" id="drop" hidden>Suelta el GPX</div>
+<dialog id="routesDlg">
+  <h2>Rutas</h2>
+  <div class="note">Elige una ruta para ver el tiempo que hará en cada tramo.</div>
+  <div class="rlist" id="routesList"></div>
+  <div class="row"><button type="button" id="routesGpx">Cargar mi propio GPX</button><button type="button" class="primary" id="routesClose">Cerrar</button></div>
+</dialog>
 <dialog id="shareDlg">
   <h2>Compartir ruta</h2>
   <div class="note" id="shareInfo">Quien abra este enlace verá la ruta con su previsión actualizada, desde el móvil o el ordenador.</div>
@@ -303,6 +319,7 @@ dialog a.btn{display:inline-block;text-decoration:none;font-weight:600;border-ra
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.0/dist/maplibre-gl.js"></script>
+<script src="gear.js"></script>
 <script>
 // ---------- utilidades ----------
 const R=6371000, rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
@@ -397,27 +414,8 @@ function resample(pts){
   return out;
 }
 
-// ---------- material recomendado (dibujos SVG 48x48) ----------
-const INK='#22323d',SW='stroke="#22323d" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"';
-const GEAR={
- botas:['Botas de montaña',`<path d="M13 7h12v15l9 5c4 2 6 4 6 8v3H9V12z" fill="#b8814f" ${SW}/><path d="M8 38h33v4H8z" fill="#3a2a20" ${SW}/><path d="M25 12h-6M25 17h-6M27 22h-6" ${SW}/>`],
- bastones:['Bastones',`<path d="M14 9l7 33M34 9l-7 33" ${SW} stroke-width="2.6"/><rect x="10" y="3" width="7" height="10" rx="2.5" fill="#2f7a5a" ${SW} transform="rotate(-12 13.5 8)"/><rect x="31" y="3" width="7" height="10" rx="2.5" fill="#2f7a5a" ${SW} transform="rotate(12 34.5 8)"/><ellipse cx="20.3" cy="38" rx="4" ry="1.6" fill="#9aa6ae" ${SW}/><ellipse cx="27.7" cy="38" rx="4" ry="1.6" fill="#9aa6ae" ${SW}/>`],
- mochila:['Mochila',`<path d="M19 11V8a5 5 0 0 1 10 0v3" fill="none" ${SW}/><rect x="11" y="10" width="26" height="33" rx="8" fill="#d0482f" ${SW}/><rect x="16" y="27" width="16" height="11" rx="3" fill="#a8341f" ${SW}/><path d="M16 19h16" ${SW}/>`],
- agua:['Agua (1,5 l o más)',`<rect x="18" y="3" width="12" height="7" rx="2" fill="#1f5f8b" ${SW}/><path d="M17 10h14l2 6v24a4 4 0 0 1-4 4H19a4 4 0 0 1-4-4V16z" fill="#d6ecf9" ${SW}/><path d="M15.6 25h16.8v15a3.5 3.5 0 0 1-3.5 3.5h-9.8a3.5 3.5 0 0 1-3.5-3.5z" fill="#4aa3df"/><path d="M17 10h14l2 6v24a4 4 0 0 1-4 4H19a4 4 0 0 1-4-4V16z" fill="none" ${SW}/>`],
- comida:['Comida y algo dulce',`<path d="M24 15c-4-3-12-2-12 8 0 9 6 18 12 16 6 2 12-7 12-16 0-10-8-11-12-8z" fill="#e05a3a" ${SW}/><path d="M24 15c0-4 2-7 5-9" fill="none" ${SW}/><path d="M25 11c3-4 8-3 9-2-2 3-6 4-9 2z" fill="#4c9a4c" ${SW}/>`],
- chubasquero:['Chubasquero',`<path d="M17 9l-9 6 3 12 4-2v18h18V25l4 2 3-12-9-6c-1 4-4 6-7 6s-6-2-7-6z" fill="#f2b705" ${SW}/><path d="M24 15v28" ${SW}/><path d="M40 3c2.2 3.2 3.2 4.6 3.2 6.2a3.2 3.2 0 0 1-6.4 0c0-1.6 1-3 3.2-6.2z" fill="#3b82c4" ${SW} stroke-width="1.4"/><path d="M6 3c1.6 2.4 2.4 3.4 2.4 4.6a2.4 2.4 0 0 1-4.8 0c0-1.2.8-2.2 2.4-4.6z" fill="#3b82c4" ${SW} stroke-width="1.2"/>`],
- cortavientos:['Cortavientos',`<path d="M22 10l-8 5 3 11 3-1.5V42h16V24.5l3 1.5 3-11-8-5c-1 3.5-3.5 5-6 5s-5-1.5-6-5z" fill="#2fa39a" ${SW}/><path d="M28 15v27" ${SW}/><path d="M2 18h9c2 0 3-1 3-2.5S13 13 11.5 13M2 25h7M3 32h8c2 0 3 1 3 2.5S13 37 11.5 37" fill="none" ${SW}/>`],
- abrigo:['Capa de abrigo (forro polar)',`<path d="M16 9l-9 5 2 16 5-1v14h20V29l5 1 2-16-9-5c-1 3-4 5-8 5s-7-2-8-5z" fill="#7a5ea8" ${SW}/><path d="M14 33l3-3 3 3 4-3 4 3 3-3 3 3" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M24 14v8" ${SW}/>`],
- gorro:['Gorro y guantes',`<path d="M9 30c0-10 7-17 15-17s15 7 15 17z" fill="#d0482f" ${SW}/><rect x="7" y="29" width="34" height="8" rx="3" fill="#a8341f" ${SW}/><circle cx="24" cy="10" r="4" fill="#f4efe8" ${SW}/><path d="M17 20v8M24 18v10M31 20v8" stroke="#a8341f" stroke-width="2" stroke-linecap="round"/>`],
- gorra:['Gorra',`<path d="M9 29c0-9 6.5-15 14.5-15S38 20 38 29z" fill="#1f5f8b" ${SW}/><path d="M30 29h14c0 3-3 5-8 5H23z" fill="#174a6d" ${SW}/><circle cx="23.5" cy="14" r="1.8" fill="${INK}"/><path d="M23.5 14v15" stroke="#174a6d" stroke-width="1.6"/>`],
- crema:['Protector solar',`<rect x="15" y="4" width="18" height="7" rx="2" fill="#f2a516" ${SW}/><path d="M16 11h16l-2 29a3 3 0 0 1-3 3h-6a3 3 0 0 1-3-3z" fill="#fff4d6" ${SW}/><circle cx="24" cy="20" r="3.6" fill="#f2a516"/><g stroke="#f2a516" stroke-width="1.6" stroke-linecap="round"><path d="M24 13v2M24 25v2M17 20h2M29 20h2"/></g><text x="24" y="37" text-anchor="middle" font-size="6.5" font-family="sans-serif" font-weight="700" fill="${INK}">SPF 50</text>`],
- gafas:['Gafas de sol',`<path d="M4 20h17v4a7.5 7.5 0 0 1-7.5 7.5h-2A7.5 7.5 0 0 1 4 24z" fill="#22323d" ${SW}/><path d="M27 20h17v4a7.5 7.5 0 0 1-7.5 7.5h-2A7.5 7.5 0 0 1 27 24z" fill="#22323d" ${SW}/><path d="M21 21.5c2-2 4-2 6 0M4 20l-1-5M44 20l1-5" fill="none" ${SW}/><path d="M8 23l4-2M31 23l4-2" stroke="#9fd0f0" stroke-width="2" stroke-linecap="round"/>`],
- frontal:['Linterna frontal',`<path d="M24 31l-10 14h20z" fill="#ffe08a" opacity=".8"/><path d="M3 24h14M31 24h14" stroke="#2f7a5a" stroke-width="5" stroke-linecap="round"/><rect x="16" y="17" width="16" height="14" rx="4" fill="#22323d" ${SW}/><circle cx="24" cy="24" r="4.2" fill="#ffe08a"/>`],
- botiquin:['Botiquín',`<path d="M18 13V9h12v4" fill="none" ${SW}/><rect x="6" y="13" width="36" height="27" rx="4" fill="#ffffff" ${SW}/><path d="M24 19v15M16.5 26.5h15" stroke="#d0482f" stroke-width="5" stroke-linecap="round"/>`],
- movil:['Móvil con batería',`<rect x="14" y="3" width="20" height="42" rx="4" fill="#22323d" ${SW}/><rect x="17" y="8" width="14" height="30" rx="1.5" fill="#cfe6f7"/><rect x="20" y="15" width="8" height="15" rx="1.5" fill="none" stroke="#1a8f74" stroke-width="2"/><path d="M22.5 13h3" stroke="#1a8f74" stroke-width="2" stroke-linecap="round"/><rect x="21.5" y="21" width="5" height="7.5" fill="#1a8f74"/>`],
- documentacion:['DNI y tarjeta sanitaria',`<rect x="4" y="11" width="40" height="27" rx="3" fill="#eef1f3" ${SW}/><rect x="8" y="16" width="11" height="14" rx="1.5" fill="#9aa6ae"/><circle cx="13.5" cy="21" r="2.6" fill="#eef1f3"/><path d="M23 18h16M23 23h16M23 28h10M8 34h31" ${SW} stroke-width="1.8"/>`],
-};
-const gearSvg=id=>`<svg viewBox="0 0 48 48" aria-hidden="true">${GEAR[id][1]}</svg>`;
+// ---------- material recomendado: catálogo y dibujos en gear.js ----------
+const GEAR=window.VM_GEAR,gearSvg=window.vmGearSvg;
 let gearEditing=false;
 function autoGear(){ // lo que añade la previsión para la franja del recorrido
   if(!S.wx)return{};const dur=duration(),s0=S.startMin,s1=s0+dur,out={};
@@ -1063,7 +1061,7 @@ async function saveOffline(){
     try{await navigator.storage?.persist?.();}catch{}
     // 1) la web, la ficha, el GPX y los logos
     const app=await caches.open('vm-app');const page=location.href.split('#')[0];
-    const own=[page,'manifest.webmanifest','icons/icon-192.png','icons/apple-touch-icon.png',
+    const own=[page,'gear.js','manifest.webmanifest','icons/icon-192.png','icons/apple-touch-icon.png',
       'https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.0/dist/maplibre-gl.js','https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.0/dist/maplibre-gl.css'];
     if(S.routeId){own.push(`rutas/${S.routeId}.json`,S.routeCfg.gpx,...(S.logos||[]).map(l=>l.src));}
     await Promise.allSettled(own.map(u=>app.add(u)));
@@ -1153,6 +1151,21 @@ function stopGps(keepCard){if(gpsWatch!=null)navigator.geolocation.clearWatch(gp
 gpsBtn.onclick=()=>gpsWatch!=null?stopGps():startGps();
 map.on('dragstart',()=>{if(gpsWatch!=null){gpsFollow=false;const b=document.getElementById('gpsCenter');if(b)b.textContent='Centrar en mí';}});
 
+// ---------- portada: rutas publicadas (rutas/index.json lo mantiene la app de edición) ----------
+const routesDlg=document.getElementById('routesDlg');
+async function loadRouteIndex(){try{const r=await fetch('rutas/index.json',{cache:'no-cache'});if(r.ok)return await r.json();}catch{}return[];}
+async function showRoutes(){const list=await loadRouteIndex(),el=document.getElementById('routesList');
+  const today=new Date().toISOString().slice(0,10),fmtD=d=>d?new Date(d+'T12:00:00').toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'}):'';
+  const card=r=>`<button type="button" class="rcard" data-id="${r.id}"><b>${String(r.n).replace(/[<&]/g,'')}</b><span>${fmtD(r.d)}${r.h?' · salida '+r.h:''}${r.km?' · '+fmtNum(r.km)+' km':''}${r.asc?' · +'+Math.round(r.asc)+' m':''}</span>
+    ${r.logos?.length?`<span class="lg">${r.logos.slice(0,3).map(l=>`<img src="${encodeURI(l)}" alt="">`).join('')}</span>`:''}</button>`;
+  const next=list.filter(r=>!r.d||r.d>=today).sort((a,b)=>(a.d||'').localeCompare(b.d||'')),past=list.filter(r=>r.d&&r.d<today).sort((a,b)=>b.d.localeCompare(a.d));
+  el.innerHTML=(next.length?`<h3>Próximas</h3>${next.map(card).join('')}`:'')+(past.length?`<h3>Anteriores</h3>${past.map(card).join('')}`:'')||'<div class="note">Todavía no hay rutas publicadas.</div>';
+  el.querySelectorAll('.rcard').forEach(b=>b.onclick=()=>{location.hash='ruta='+b.dataset.id;});
+  if(!routesDlg.open)routesDlg.showModal();return list;}
+document.getElementById('routesBtn').onclick=showRoutes;
+document.getElementById('routesClose').onclick=()=>routesDlg.close();
+document.getElementById('routesGpx').onclick=()=>{routesDlg.close();document.getElementById('gpx').click();};
+
 addEventListener('hashchange',()=>location.reload()); // un enlace nuevo en la misma pestaña siempre arranca de cero
 // arranque: ficha (#ruta=…), ruta del enlace (#r=… o #gpx=archivo) o recorrido de ejemplo
 (async()=>{let h=location.hash.slice(1);
@@ -1167,7 +1180,10 @@ addEventListener('hashchange',()=>location.reload()); // un enlace nuevo en la m
       if(q.get('t'))goalIn.value=q.get('t'),lastEdited='goal';else if(q.get('p'))paceIn.value=q.get('p');
       S.eq=parseEq(q.get('eq'));
       await loadRoute(pts,q.get('n')||name||'Ruta');await run();return;}
-  }catch(e){console.error(e);setStatus('No se pudo abrir la ruta del enlace: '+e.message,true);goalIn.value='';lastEdited='pace';paceIn.value='5:00';}
+    // sin ruta en el enlace: portada con las rutas publicadas
+    const list=await showRoutes();if(list.length)return;
+  }catch(e){console.error(e);setStatus('No se pudo abrir la ruta del enlace: '+e.message,true);goalIn.value='';lastEdited='pace';paceIn.value='5:00';
+    try{localStorage.removeItem('vm-last');}catch{}}
   S.eq=['botas','agua','movil'];
   await loadRoute(SAMPLE,'Recorrido de ejemplo · Zamora');run();
 })();

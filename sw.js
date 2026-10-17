@@ -1,11 +1,12 @@
 // Service worker de Viriato Méteo: deja la web lista para abrirse sin cobertura.
 // Los mapas y la previsión los guarda la propia página (Cache API y localStorage).
-const SHELL = 'vm-shell-v2';
+const SHELL = 'vm-shell-v3';
 const INDEX = new URL('./', self.location).href; // copia canónica de la página
 const PRECACHE = [
   './',
   './index.html',
   './manifest.webmanifest',
+  './gear.js',
   './icons/icon.svg',
   './icons/icon-192.png',
   './icons/apple-touch-icon.png',
