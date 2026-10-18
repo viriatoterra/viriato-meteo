@@ -71,6 +71,10 @@ h1,h2{font-family:var(--display);font-weight:700;letter-spacing:.01em;margin:0;t
 .gpscard .big{font:700 30px/1 var(--display);font-variant-numeric:tabular-nums}
 .gpscard .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--muted)}
 .gpscard .row b{color:var(--ink)}
+.gpscard .elev{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;font-size:13px;color:var(--muted);padding:4px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:2px 0}
+.gpscard .elev i{display:block;font-style:normal;font-size:10px;text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+.gpscard .elev span:nth-child(even){align-self:end}
+.gpscard .elev b{color:var(--ink);font-variant-numeric:tabular-nums}
 .gpscard .warn{color:var(--head);font-weight:600;font-size:13px}
 .gpscard .acts{display:flex;gap:6px;margin-top:4px}
 .gpscard .acts button{font-size:12px;padding:4px 9px}
@@ -99,7 +103,15 @@ button.primary{background:var(--accent);border-color:var(--accent);color:var(--s
 .fx{position:absolute;inset:0;pointer-events:none;z-index:2;width:100%;height:100%}
 .basemap{position:absolute;left:12px;top:12px;z-index:5;flex-direction:row;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:4px 4px 4px 10px;color:var(--muted)}
 .basemap select{border:0;padding:4px 6px;font-weight:600}
-.legend{position:absolute;left:12px;bottom:28px;z-index:5;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px}
+.maptools{position:absolute;left:12px;bottom:28px;z-index:5;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.layers{display:flex;gap:6px;flex-wrap:wrap}
+.layers button{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 12px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.layers button svg{width:17px;height:17px}
+.layers button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.radarbar{position:absolute;left:50%;transform:translateX(-50%);bottom:84px;z-index:6;display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;max-width:calc(100% - 24px);background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px 12px 4px 4px;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.radarbar button{border-radius:999px;width:30px;height:30px;padding:0;font-size:12px}
+.radarbar small{font-weight:400;color:var(--muted);font-size:11px}
+.legend{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px}
 .legend .ramp{width:180px;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--tail),var(--neutral),var(--head))}
 .legend .ticks{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--muted)}
 .hud{position:absolute;right:12px;top:12px;z-index:5;display:flex;gap:12px;align-items:center;background:color-mix(in srgb,var(--surface) 88%,transparent);
@@ -149,7 +161,7 @@ button.primary{background:var(--accent);border-color:var(--accent);color:var(--s
 .tl-head label{flex-direction:row;align-items:center;gap:6px;text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink)}
 #profile{width:100%;height:100px;display:block;margin-top:6px;cursor:crosshair;touch-action:none}
 .wmark{display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer}
-.wmark span{font:600 11px var(--mono);color:#13202a;background:rgba(255,255,255,.92);border-radius:999px;padding:1px 6px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.25);font-variant-numeric:tabular-nums}
+.wmark span{font:600 10px var(--mono);color:#13202a;background:rgba(255,255,255,.82);border-radius:999px;padding:1px 6px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.25);font-variant-numeric:tabular-nums}
 .wmark svg{transition:transform .3s}
 .runner{width:18px;height:18px;border-radius:50%;background:var(--accent);border:3px solid #fff;box-shadow:0 0 0 2px var(--accent),0 2px 8px rgba(0,0,0,.4)}
 .pin{width:14px;height:14px;border-radius:50%;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)}
@@ -190,6 +202,8 @@ dialog a.btn{display:inline-block;text-decoration:none;font-weight:600;border-ra
   .panel{border-left:0;border-top:1px solid var(--line)}
   #clock{min-width:0;flex-basis:100%}
   .legend{display:none}
+  .maptools{bottom:30px}
+  .radarbar{bottom:78px}
   .gpscard{bottom:12px;max-width:none}
   .gpsbtn{top:12px;left:auto;right:12px}
 }
@@ -249,11 +263,18 @@ dialog a.btn{display:inline-block;text-decoration:none;font-weight:600;border-ra
         <span id="hudSky"></span>
       </div>
     </div>
-    <div class="legend">
-      <div style="margin-bottom:4px">Viento en la dirección de carrera (km/h)</div>
-      <div class="ramp"></div>
-      <div class="ticks"><span>−20 a favor</span><span>0</span><span>+20 de cara</span></div>
+    <div class="maptools">
+      <div class="legend" id="windLegend">
+        <div style="margin-bottom:4px">Viento en la dirección de marcha (km/h)</div>
+        <div class="ramp"></div>
+        <div class="ticks"><span>−20 a favor</span><span>0</span><span>+20 de cara</span></div>
+      </div>
+      <div class="layers">
+        <button type="button" id="tgRadar" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16h10a4 4 0 0 0 .5-8 5.5 5.5 0 0 0-10.6-1.4A4.3 4.3 0 0 0 7 16z"/><path d="M9 19l-1 2M13 19l-1 2M17 19l-1 2"/></svg>Radar de lluvia</button>
+        <button type="button" id="tgWind" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h8"/></svg>Viento</button>
+      </div>
     </div>
+    <div class="radarbar" id="radarBar" hidden><button type="button" id="radarPlay" aria-label="Pausar o reproducir el radar">❚❚</button><span id="radarTime">Radar</span><small id="radarNote"></small></div>
     <div class="status" id="status" hidden></div>
   </section>
 
@@ -532,6 +553,39 @@ async function buildStyle(key){
   if(typeof st.sprite==='string')st.sprite=vmc(st.sprite);else if(Array.isArray(st.sprite))st.sprite=st.sprite.map(x=>({...x,url:vmc(x.url)}));
   if(st.glyphs)st.glyphs=vmc(st.glyphs);
   return st;}
+// ---------- capas: viento (se puede ocultar) y radar de lluvia (RainViewer) ----------
+let WIND_ON=true;try{WIND_ON=localStorage.getItem('vm-wind')!=='0';}catch{}
+function applyWind(recolor=true){const b=document.getElementById('tgWind');b.setAttribute('aria-pressed',String(WIND_ON));
+  windMarkers.forEach(m=>m&&(m.getElement().style.display=WIND_ON?'':'none'));
+  document.getElementById('windLegend').hidden=!WIND_ON;document.getElementById('mode').hidden=!WIND_ON;
+  if(recolor&&S.route&&S.wx)drawProfile(routeIdxAtMin(+slider.value));
+  if(!WIND_ON&&typeof tctx!=='undefined')tctx.clearRect(0,0,W,H);
+  if(recolor&&S.lastHeads)colorRoute(S.lastHeads);}
+document.getElementById('tgWind').onclick=()=>{WIND_ON=!WIND_ON;try{localStorage.setItem('vm-wind',WIND_ON?'1':'0');}catch{}applyWind();};
+const RADAR={on:false,frames:[],i:0,timer:null,host:''};
+async function radarLoad(){const r=await fetch('https://api.rainviewer.com/public/weather-maps.json',{cache:'no-store',signal:withTimeout(8000)});
+  const j=await r.json();RADAR.host=j.host;RADAR.frames=[...(j.radar?.past||[]),...(j.radar?.nowcast||[])].slice(-12);if(!RADAR.frames.length)throw new Error('sin datos');}
+function radarAdd(){if(!RADAR.frames.length||!map.getLayer('hot'))return;
+  RADAR.frames.forEach((f,k)=>{const id='radar'+k;if(map.getSource(id))return;
+    map.addSource(id,{type:'raster',tiles:[`${RADAR.host}${f.path}/256/{z}/{x}/{y}/2/1_1.png`],tileSize:256,maxzoom:7,attribution:'Radar © RainViewer'});
+    map.addLayer({id,type:'raster',source:id,paint:{'raster-opacity':0,'raster-fade-duration':0}},'hot');});
+  radarShow(Math.min(RADAR.i,RADAR.frames.length-1));}
+function radarRemove(){for(let k=0;k<24;k++){const id='radar'+k;if(map.getLayer(id))map.removeLayer(id);if(map.getSource(id))map.removeSource(id);}}
+function radarShow(i){RADAR.i=i;RADAR.frames.forEach((_,k)=>{const id='radar'+k;if(map.getLayer(id))map.setPaintProperty(id,'raster-opacity',k===i?.75:0);});
+  const f=RADAR.frames[i];if(!f)return;const t=new Date(f.time*1000),last=i===RADAR.frames.length-1,ago=Math.max(0,Math.round((Date.now()-t)/6e4));
+  document.getElementById('radarTime').textContent=`Lluvia ${t.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}${last?' · la más reciente':' · hace '+ago+' min'}`;}
+function radarPlay(on){clearInterval(RADAR.timer);RADAR.timer=null;document.getElementById('radarPlay').textContent=on?'❚❚':'▶';
+  if(on)RADAR.timer=setInterval(()=>radarShow((RADAR.i+1)%RADAR.frames.length),700);}
+async function setRadar(on){
+  if(on){if(!navigator.onLine){setStatus('El radar de lluvia necesita conexión.',true);setTimeout(()=>setStatus(''),4000);on=false;}
+    else{try{await radarLoad();}catch{setStatus('No se pudo cargar el radar de lluvia.',true);setTimeout(()=>setStatus(''),4000);on=false;}}}
+  RADAR.on=on;document.getElementById('tgRadar').setAttribute('aria-pressed',String(on));document.getElementById('radarBar').hidden=!on;
+  const today=new Date().toISOString().slice(0,10);
+  document.getElementById('radarNote').textContent=on&&S.date&&S.date!==today?'Es la lluvia de ahora mismo; para el día de la ruta, mira la previsión.':'Últimas 2 horas';
+  radarRemove();if(on){RADAR.i=RADAR.frames.length-1;radarAdd();radarPlay(true);}else radarPlay(false);}
+document.getElementById('tgRadar').onclick=()=>setRadar(!RADAR.on);
+document.getElementById('radarPlay').onclick=()=>radarPlay(!RADAR.timer);
+setInterval(()=>{if(RADAR.on&&navigator.onLine)radarLoad().then(()=>{radarRemove();radarAdd();}).catch(()=>{});},10*60*1000);
 const bmSel=document.getElementById('basemap');
 let BM_KEY='calles';try{const v=localStorage.getItem('vm-basemap');if(BASEMAPS[v])BM_KEY=v;}catch{}
 {const hm=new URLSearchParams(location.hash.slice(1)).get('m');if(BASEMAPS[hm])BM_KEY=hm;} // el mapa del enlace manda
@@ -560,6 +614,7 @@ map.on('style.load',()=>{
   map.addLayer({id:'route-casing',type:'line',source:'route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#ffffff','line-width':11,'line-opacity':.95}});
   map.addLayer({id:'route',type:'line',source:'route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':['get','c'],'line-width':7}});
   styleReady();
+  if(RADAR.on)radarAdd();
   // al cambiar de mapa, volver a pintar recorrido, tramos críticos y cielo
   if(S.wx&&S.passHead){colorRoute(modeSel.value==='now'?S.head:S.passHead);map.getSource('hot').setData(S.hotData||EMPTY);FX.cond=null;update();}
 });
@@ -589,18 +644,19 @@ async function drawRoute(){
   fitRoute(0);
 }
 function colorRoute(heads){
-  const r=S.route,feats=[],CH=4;
+  S.lastHeads=heads;const r=S.route,feats=[],CH=4,plain=!WIND_ON?css('--accent'):null;
   for(let i=0;i<r.length-1;i+=CH){const sl=r.slice(i,Math.min(r.length,i+CH+1));let s=0,c=0;
     for(let k=i;k<Math.min(heads.length,i+CH);k++){s+=heads[k];c++;}
-    feats.push({type:'Feature',properties:{c:windColor(s/c)},geometry:{type:'LineString',coordinates:sl.map(p=>[p.lon,p.lat])}});}
+    feats.push({type:'Feature',properties:{c:plain||windColor(s/c)},geometry:{type:'LineString',coordinates:sl.map(p=>[p.lon,p.lat])}});}
   map.getSource('route')?.setData({type:'FeatureCollection',features:feats});
 }
 function makeWindMarkers(){
   windMarkers.forEach(m=>m&&m.remove());windMarkers=[];
   const every=innerWidth<600?Math.ceil(S.samples.length/7):1; // en el móvil, menos flechas para que no se pisen
   S.samples.forEach((s,k)=>{if(k%every){windMarkers.push(null);return;}const el=document.createElement('div');el.className='wmark';
-    el.innerHTML=`<svg width="34" height="34" viewBox="0 0 24 24"><path d="M12 2 L19 20 L12 15.5 L5 20 Z" fill="#1f5f8b" stroke="#fff" stroke-width="1.6"/></svg><span></span>`;
+    el.innerHTML=`<svg width="24" height="24" viewBox="0 0 24 24"><path d="M12 2 L19 20 L12 15.5 L5 20 Z" fill="#1f5f8b" fill-opacity=".85" stroke="#fff" stroke-width="1.6"/></svg><span></span>`;
     windMarkers.push(new maplibregl.Marker({element:el,anchor:'center'}).setLngLat([s.lon,s.lat]).setPopup(new maplibregl.Popup({offset:18})).addTo(map));});
+  applyWind(false);
 }
 
 // ---------- tiempo ----------
@@ -665,7 +721,7 @@ function sizeFx(){const dpr=devicePixelRatio||1;W=wrap.clientWidth;H=wrap.client
 new ResizeObserver(sizeFx).observe(wrap);sizeFx();
 
 const FX={wind:[],cond:null,sun:{alt:-90,az:0},cloud:0,rain:0,code:null,snow:false,screenWind:[0,0],spd:0};
-const particles=[],NP=380,drops=[],clouds=[];
+const particles=[],NP=200,drops=[],clouds=[];
 function spawnBox(){const b=S.bbox,pw=(b.e-b.w)*.7+.004,ph=(b.n-b.s)*.7+.003;
   let box={w:b.w-pw,e:b.e+pw,s:b.s-ph,n:b.n+ph};
   try{const v=map.getBounds();const ib={w:Math.max(box.w,v.getWest()),e:Math.min(box.e,v.getEast()),s:Math.max(box.s,v.getSouth()),n:Math.min(box.n,v.getNorth())};
@@ -710,10 +766,10 @@ function frame(){
   drawSun();
   // partículas de viento con estela
   tctx.globalCompositeOperation='destination-out';tctx.fillStyle='rgba(0,0,0,.14)';tctx.fillRect(0,0,W,H);tctx.globalCompositeOperation='source-over';
-  if(!reduceMotion||!particles.length){
+  if(WIND_ON&&(!reduceMotion||!particles.length)){
     const box=spawnBox();while(particles.length<NP){const p={};spawn(p,box);particles.push(p);}
     const c=map.unproject([W/2,H*.6]),c2=map.unproject([W/2+100,H*.6]);const mpp=hav({lat:c.lat,lon:c.lng},{lat:c2.lat,lon:c2.lng})/100;
-    tctx.lineWidth=1.3;tctx.lineCap='round';tctx.strokeStyle=(FX.cond==='night'||BASEMAPS[BM_KEY].darkBg)?'rgba(220,235,255,.8)':'rgba(16,48,78,.72)';tctx.beginPath();
+    tctx.lineWidth=1.1;tctx.lineCap='round';tctx.strokeStyle=(FX.cond==='night'||BASEMAPS[BM_KEY].darkBg)?'rgba(220,235,255,.5)':'rgba(16,48,78,.42)';tctx.beginPath();
     for(const p of particles){const w=FX.wind[p.k];if(!w||w.spd<0.3){p.age++;if(p.age>p.life)spawn(p,box);continue;}
       const dm=(w.spd/9)*mpp;p.lat+=w.v/w.spd*dm/111320;p.lon+=w.u/w.spd*dm/(111320*Math.cos(rad(p.lat)));
       const s=map.project([p.lon,p.lat]);
@@ -791,8 +847,9 @@ function update(){
   const w=FX.wind[p.s],h=headComp(w,p.brg);
   FX.screenWind=screenDir(p.lat,p.lon,w.u,w.v);
   const x=wxAtRace(m);
+  const evc=elevAt(i);
   clock.innerHTML=`<span class="el"><small>Tiempo transcurrido</small>${fmtElapsed(m)}</span>${wxIcon(x.code,x.day,30)}
-    <span class="det"><b>km ${fmtKm(p.d)}</b> de ${fmtKm(S.total)} · hora ${fmtClock(now)}<br>${fmtNum(x.t)} °C · ${h>=0?'de cara':'a favor'} <b>${Math.abs(h).toFixed(0)} km/h</b> · viento ${Math.round(w.spd)} km/h</span>`;
+    <span class="det"><b>km ${fmtKm(p.d)}</b> de ${fmtKm(S.total)} · hora ${fmtClock(now)}${evc?` · altitud <b>${fmtM(evc.alt)}</b>`:''}<br>${fmtNum(x.t)} °C${evc?` · subida <b>+${fmtM(evc.upDone)}</b> · bajada <b>−${fmtM(evc.dnDone)}</b>`:''} · viento ${Math.round(w.spd)} km/h</span>`;
   document.querySelectorAll('.hour').forEach(el=>el.classList.toggle('on',Math.abs(+el.dataset.m-m)<0.5));
   rotateWindMarkers();
   windMarkers.forEach((mk,k)=>{const ww=FX.wind[k];if(!mk)return;mk.getPopup().setHTML(`<b>${fmtClock(now)}</b><br>Viento del ${cardinal(ww.dir)} (${Math.round(ww.dir)}°), ${Math.round(ww.spd)} km/h<br>Rachas ${Math.round(ww.gust)} km/h<br>Temp. ${fmtNum(at(k,'temperature_2m',now))} °C`);});
@@ -882,7 +939,7 @@ function drawProfile(cur){
     g.fillStyle=css('--muted');g.fillText(Math.round(hi)+' m',2,top+8);g.fillText(Math.round(lo)+' m',2,bot);
   } else g.fillText('El GPX no trae altitud',L0,bot-4);
   const heads=modeSel.value==='now'?S.head:S.passHead;
-  if(heads)for(let i=0;i<r.length-1;i++){g.fillStyle=windColor(heads[i]);g.fillRect(X(r[i].d),bot+4,Math.max(1,X(r[i+1].d)-X(r[i].d))+.5,strip);}
+  if(heads)for(let i=0;i<r.length-1;i++){g.fillStyle=WIND_ON?windColor(heads[i]):css('--line');g.fillRect(X(r[i].d),bot+4,Math.max(1,X(r[i+1].d)-X(r[i].d))+.5,strip);}
   g.fillStyle=css('--muted');const stepKm=S.total>25000?5:S.total>8000?2:1;
   for(let k=0;k*stepKm*1000<=S.total;k++)g.fillText(k*stepKm,X(k*stepKm*1000)-3,h-2);
   if(cur!=null){const x=X(r[cur].d);g.strokeStyle=css('--accent');g.lineWidth=2;g.beginPath();g.moveTo(x,top);g.lineTo(x,bot+strip+4);g.stroke();}
@@ -946,8 +1003,8 @@ const scrub=e=>{const d=Math.max(0,Math.min(S.total,(e.offsetX-36)/(prof.clientW
 prof.addEventListener('pointerdown',e=>{if(!S.wx)return;scrubbing=true;prof.setPointerCapture(e.pointerId);scrub(e);});
 prof.addEventListener('pointerup',e=>{scrubbing=false;if(e.pointerType!=='mouse')tip.hidden=true;});
 prof.addEventListener('pointermove',e=>{if(!S.wx)return;if(scrubbing)scrub(e);
-  const d=Math.max(0,Math.min(S.total,(e.offsetX-36)/(prof.clientWidth-44)*S.total)),m=d/1000*S.pace,x=wxAtRace(m);
-  tip.innerHTML=`<b>${fmtElapsed(m)}</b>${wxIcon(x.code,x.day,24)}<span>km ${fmtKm(d)} · ${fmtClock(x.now)}<br>${fmtNum(x.t)} °C · ${x.head>=0?'cara':'favor'} ${Math.abs(x.head).toFixed(0)} km/h</span>`;
+  const d=Math.max(0,Math.min(S.total,(e.offsetX-36)/(prof.clientWidth-44)*S.total)),m=d/1000*S.pace,x=wxAtRace(m);const ev=elevAt(routeIdxAtMin(m));
+  tip.innerHTML=`<b>${fmtElapsed(m)}</b>${wxIcon(x.code,x.day,24)}<span>km ${fmtKm(d)} · ${fmtClock(x.now)}${ev?' · '+fmtM(ev.alt):''}<br>${fmtNum(x.t)} °C · ${x.head>=0?'cara':'favor'} ${Math.abs(x.head).toFixed(0)} km/h</span>`;
   tip.hidden=false;const left=Math.min(prof.offsetLeft+e.offsetX+12,prof.parentElement.clientWidth-tip.offsetWidth-8);
   tip.style.left=left+'px';tip.style.top=(prof.offsetTop-tip.offsetHeight-6)+'px';});
 prof.addEventListener('pointerleave',()=>{if(!scrubbing)tip.hidden=true;});
@@ -1100,8 +1157,13 @@ if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWo
 // ---------- GPS: dónde estás dentro de la ruta ----------
 const gpsBtn=document.getElementById('gpsBtn'),gpsCard=document.getElementById('gpsCard');
 let gpsWatch=null,gpsIdx=null,gpsMarker=null,gpsFollow=true,gpsLastSum=0,sufAsc=null;
-function buildSufAsc(){const r=S.route;sufAsc=new Float64Array(r.length);
-  for(let i=r.length-2;i>=0;i--){const up=(r[i].ele!=null&&r[i+1].ele!=null)?Math.max(0,r[i+1].ele-r[i].ele):0;sufAsc[i]=sufAsc[i+1]+up;}}
+// desnivel acumulado desde la salida hasta cada punto (subida y bajada, en metros)
+function buildSufAsc(){const r=S.route,n=r.length;const up=new Float64Array(n),dn=new Float64Array(n);
+  for(let i=1;i<n;i++){const a=r[i-1].ele,b=r[i].ele,dd=(a!=null&&b!=null)?b-a:0;up[i]=up[i-1]+Math.max(0,dd);dn[i]=dn[i-1]+Math.max(0,-dd);}
+  sufAsc={up,dn,upT:up[n-1],dnT:dn[n-1]};}
+function elevAt(i){if(!S.hasEle)return null;if(!sufAsc||sufAsc.up.length!==S.route.length)buildSufAsc();const e=sufAsc,p=S.route[i];
+  return{alt:p.ele,upDone:e.up[i],upLeft:e.upT-e.up[i],dnDone:e.dn[i],dnLeft:e.dnT-e.dn[i]};}
+const fmtM=v=>Math.round(v).toLocaleString('es-ES')+' m';
 function matchRoute(lat,lon){const r=S.route,ky=111320,kx=111320*Math.cos(rad(lat));let best=-1,bd=Infinity,fw=-1,fd=Infinity;const ds=new Float64Array(r.length);
   for(let i=0;i<r.length;i++){const d=Math.hypot((r[i].lat-lat)*ky,(r[i].lon-lon)*kx);ds[i]=d;if(d<bd){bd=d;best=i;}
     if(gpsIdx!=null&&i>=gpsIdx-40&&d<fd){fd=d;fw=i;}}
@@ -1113,8 +1175,7 @@ function onGps(pos){
   const {latitude:lat,longitude:lon,accuracy:acc}=pos.coords;if(!S.route)return;
   if(!gpsMarker)gpsMarker=new maplibregl.Marker({element:Object.assign(document.createElement('div'),{className:'me'})});
   gpsMarker.setLngLat([lon,lat]).addTo(map);
-  if(!sufAsc||sufAsc.length!==S.route.length)buildSufAsc();
-  const m=matchRoute(lat,lon);gpsIdx=m.i;const p=S.route[m.i],left=S.total-p.d,upLeft=sufAsc[m.i];
+  const m=matchRoute(lat,lon);gpsIdx=m.i;const p=S.route[m.i],left=S.total-p.d,ev=elevAt(m.i);
   const minsLeft=left/1000*S.pace,eta=new Date(Date.now()+minsLeft*6e4);
   // si la ruta es hoy, el horario de la previsión se ajusta a tu avance real
   const nowM=routeNowMin();let here='';
@@ -1129,7 +1190,9 @@ function onGps(pos){
   gpsCard.hidden=false;
   gpsCard.innerHTML=`${off?`<span class="warn">Estás a ${m.d>=1000?fmtKm(m.d)+' km':Math.round(m.d)+' m'} de la ruta. Los datos son desde el punto más cercano.</span>`:''}
     <span class="big">Te quedan ${fmtKm(left)} km</span>
-    <span class="row"><span>Vas por el <b>km ${fmtKm(p.d)}</b> de ${fmtKm(S.total)}</span>${S.hasEle?`<span>· quedan <b>+${Math.round(upLeft)} m</b> de subida</span>`:''}</span>
+    <span class="row"><span>Vas por el <b>km ${fmtKm(p.d)}</b> de ${fmtKm(S.total)}</span>${ev?`<span>· altitud <b>${fmtM(ev.alt)}</b></span>`:''}</span>
+    ${ev?`<span class="elev"><span><i>Subida</i><b>+${fmtM(ev.upDone)}</b> hecha</span><span><b>+${fmtM(ev.upLeft)}</b> por delante</span>
+      <span><i>Bajada</i><b>−${fmtM(ev.dnDone)}</b> hecha</span><span><b>−${fmtM(ev.dnLeft)}</b> por delante</span></span>`:''}
     <span class="row"><span>Llegada aprox. <b>${eta.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}</b> (${fmtDur(minsLeft)} al ritmo previsto)</span></span>
     ${here}
     <span class="row"><span>Precisión del GPS: ±${Math.round(acc)} m</span></span>
