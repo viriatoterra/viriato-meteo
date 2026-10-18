@@ -872,7 +872,7 @@ function update(){
   const x=wxAtRace(m);
   const evc=elevAt(i);
   clock.innerHTML=`<span class="el"><small>Tiempo transcurrido</small>${fmtElapsed(m)}</span>${wxIcon(x.code,x.day,30)}
-    <span class="det"><b>km ${fmtKm(p.d)}</b> de ${fmtKm(S.total)} · hora ${fmtClock(now)}${evc?` · altitud <b>${fmtM(evc.alt)}</b>`:''}<br>${fmtNum(x.t)} °C${evc?` · subida <b>+${fmtM(evc.upDone)}</b> · bajada <b>−${fmtM(evc.dnDone)}</b>`:''} · viento ${Math.round(w.spd)} km/h</span>`;
+    <span class="det"><b>km ${fmtKm(p.d)}</b> de ${fmtKm(S.total)} · hora ${fmtClock(now)}${evc?` · altitud <b>${fmtM(evc.alt)}</b>`:''}${evc?`<br>subida <b>+${fmtM(evc.upDone)}</b> hecha · <b>+${fmtM(evc.upLeft)}</b> por delante<br>bajada <b>−${fmtM(evc.dnDone)}</b> hecha · <b>−${fmtM(evc.dnLeft)}</b> por delante`:''}<br>${fmtNum(x.t)} °C · viento ${Math.round(w.spd)} km/h</span>`;
   document.querySelectorAll('.hour').forEach(el=>el.classList.toggle('on',Math.abs(+el.dataset.m-m)<0.5));
   rotateWindMarkers();
   windMarkers.forEach((mk,k)=>{const ww=FX.wind[k];if(!mk)return;mk.getPopup().setHTML(`<b>${fmtClock(now)}</b><br>Viento del ${cardinal(ww.dir)} (${Math.round(ww.dir)}°), ${Math.round(ww.spd)} km/h<br>Rachas ${Math.round(ww.gust)} km/h<br>Temp. ${fmtNum(at(k,'temperature_2m',now))} °C`);});
@@ -1029,7 +1029,7 @@ prof.addEventListener('pointerdown',e=>{if(!S.wx)return;scrubbing=true;prof.setP
 prof.addEventListener('pointerup',e=>{scrubbing=false;if(e.pointerType!=='mouse')tip.hidden=true;});
 prof.addEventListener('pointermove',e=>{if(!S.wx)return;if(scrubbing)scrub(e);
   const d=Math.max(0,Math.min(S.total,(e.offsetX-36)/(prof.clientWidth-44)*S.total)),m=d/1000*S.pace,x=wxAtRace(m);const ev=elevAt(routeIdxAtMin(m));
-  tip.innerHTML=`<b>${fmtElapsed(m)}</b>${wxIcon(x.code,x.day,24)}<span>km ${fmtKm(d)} · ${fmtClock(x.now)}${ev?' · '+fmtM(ev.alt):''}<br>${fmtNum(x.t)} °C · ${x.head>=0?'cara':'favor'} ${Math.abs(x.head).toFixed(0)} km/h</span>`;
+  tip.innerHTML=`<b>${fmtElapsed(m)}</b>${wxIcon(x.code,x.day,24)}<span>km ${fmtKm(d)} · ${fmtClock(x.now)}${ev?' · '+fmtM(ev.alt):''}${ev?`<br>quedan +${fmtM(ev.upLeft)} / −${fmtM(ev.dnLeft)}`:''}<br>${fmtNum(x.t)} °C · ${x.head>=0?'cara':'favor'} ${Math.abs(x.head).toFixed(0)} km/h</span>`;
   tip.hidden=false;const left=Math.min(prof.offsetLeft+e.offsetX+12,prof.parentElement.clientWidth-tip.offsetWidth-8);
   tip.style.left=left+'px';tip.style.top=(prof.offsetTop-tip.offsetHeight-6)+'px';});
 prof.addEventListener('pointerleave',()=>{if(!scrubbing)tip.hidden=true;});
