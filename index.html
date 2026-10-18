@@ -75,6 +75,8 @@ h1,h2{font-family:var(--display);font-weight:700;letter-spacing:.01em;margin:0;t
 .gpscard .elev i{display:block;font-style:normal;font-size:10px;text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
 .gpscard .elev span:nth-child(even){align-self:end}
 .gpscard .elev b{color:var(--ink);font-variant-numeric:tabular-nums}
+.sunline{color:var(--ink);font-weight:500}
+.sunline:not(:empty)::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--sun);margin-right:6px;vertical-align:-1px;box-shadow:0 5px 0 -3px var(--sun)}
 .gpscard .warn{color:var(--head);font-weight:600;font-size:13px}
 .gpscard .acts{display:flex;gap:6px;margin-top:4px}
 .gpscard .acts button{font-size:12px;padding:4px 9px}
@@ -261,6 +263,7 @@ dialog a.btn{display:inline-block;text-decoration:none;font-weight:600;border-ra
         <span class="t" id="hudTemp"></span>
         <span id="hudWind"></span>
         <span id="hudSky"></span>
+        <span id="hudSun" class="sunline"></span>
       </div>
     </div>
     <div class="maptools">
@@ -564,27 +567,35 @@ function applyWind(recolor=true){const b=document.getElementById('tgWind');b.set
 document.getElementById('tgWind').onclick=()=>{WIND_ON=!WIND_ON;try{localStorage.setItem('vm-wind',WIND_ON?'1':'0');}catch{}applyWind();};
 const RADAR={on:false,frames:[],i:0,timer:null,host:''};
 async function radarLoad(){const r=await fetch('https://api.rainviewer.com/public/weather-maps.json',{cache:'no-store',signal:withTimeout(8000)});
-  const j=await r.json();RADAR.host=j.host;RADAR.frames=[...(j.radar?.past||[]),...(j.radar?.nowcast||[])].slice(-12);if(!RADAR.frames.length)throw new Error('sin datos');}
+  const j=await r.json();RADAR.host=j.host;RADAR.frames=[...(j.radar?.past||[]),...(j.radar?.nowcast||[])].slice(-7);if(!RADAR.frames.length)throw new Error('sin datos');}
 function radarAdd(){if(!RADAR.frames.length||!map.getLayer('hot'))return;
   RADAR.frames.forEach((f,k)=>{const id='radar'+k;if(map.getSource(id))return;
     map.addSource(id,{type:'raster',tiles:[`${RADAR.host}${f.path}/256/{z}/{x}/{y}/2/1_1.png`],tileSize:256,maxzoom:7,attribution:'Radar © RainViewer'});
-    map.addLayer({id,type:'raster',source:id,paint:{'raster-opacity':0,'raster-fade-duration':0}},'hot');});
+    map.addLayer({id,type:'raster',source:id,paint:{'raster-opacity':0,'raster-fade-duration':0,'raster-opacity-transition':{duration:0}}},'hot');});
   radarShow(Math.min(RADAR.i,RADAR.frames.length-1));}
 function radarRemove(){for(let k=0;k<24;k++){const id='radar'+k;if(map.getLayer(id))map.removeLayer(id);if(map.getSource(id))map.removeSource(id);}}
-function radarShow(i){RADAR.i=i;RADAR.frames.forEach((_,k)=>{const id='radar'+k;if(map.getLayer(id))map.setPaintProperty(id,'raster-opacity',k===i?.75:0);});
+function radarShow(i){RADAR.i=i;RADAR.frames.forEach((_,k)=>{const id='radar'+k;if(map.getLayer(id))map.setPaintProperty(id,'raster-opacity',k===i?.8:0);});
   const f=RADAR.frames[i];if(!f)return;const t=new Date(f.time*1000),last=i===RADAR.frames.length-1,ago=Math.max(0,Math.round((Date.now()-t)/6e4));
   document.getElementById('radarTime').textContent=`Lluvia ${t.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}${last?' · la más reciente':' · hace '+ago+' min'}`;}
-function radarPlay(on){clearInterval(RADAR.timer);RADAR.timer=null;document.getElementById('radarPlay').textContent=on?'❚❚':'▶';
-  if(on)RADAR.timer=setInterval(()=>radarShow((RADAR.i+1)%RADAR.frames.length),700);}
+function radarPlay(on){clearTimeout(RADAR.timer);RADAR.timer=null;document.getElementById('radarPlay').textContent=on?'❚❚':'▶';
+  if(!on)return;
+  const tick=()=>{const last=RADAR.i===RADAR.frames.length-1;radarShow(last?0:RADAR.i+1);
+    RADAR.timer=setTimeout(tick,RADAR.i===RADAR.frames.length-1?2500:900);}; // se para un momento en la imagen más reciente
+  RADAR.timer=setTimeout(tick,1200);}
 async function setRadar(on){
   if(on){if(!navigator.onLine){setStatus('El radar de lluvia necesita conexión.',true);setTimeout(()=>setStatus(''),4000);on=false;}
     else{try{await radarLoad();}catch{setStatus('No se pudo cargar el radar de lluvia.',true);setTimeout(()=>setStatus(''),4000);on=false;}}}
   RADAR.on=on;document.getElementById('tgRadar').setAttribute('aria-pressed',String(on));document.getElementById('radarBar').hidden=!on;
   const today=new Date().toISOString().slice(0,10);
   document.getElementById('radarNote').textContent=on&&S.date&&S.date!==today?'Es la lluvia de ahora mismo; para el día de la ruta, mira la previsión.':'Últimas 2 horas';
-  radarRemove();if(on){RADAR.i=RADAR.frames.length-1;radarAdd();radarPlay(true);}else radarPlay(false);}
+  radarRemove();
+  if(on){RADAR.i=RADAR.frames.length-1;radarAdd();
+    RADAR.view={center:map.getCenter(),zoom:map.getZoom(),pitch:map.getPitch(),bearing:map.getBearing()};
+    if(map.getZoom()>8.5){const b=S.bbox;map.easeTo({center:[(b.w+b.e)/2,(b.s+b.n)/2],zoom:8,pitch:0,bearing:0,duration:900});}
+    map.once('idle',()=>{if(RADAR.on)radarPlay(true);});}
+  else{radarPlay(false);if(RADAR.view){map.easeTo({...RADAR.view,duration:900});RADAR.view=null;}}}
 document.getElementById('tgRadar').onclick=()=>setRadar(!RADAR.on);
-document.getElementById('radarPlay').onclick=()=>radarPlay(!RADAR.timer);
+document.getElementById('radarPlay').onclick=()=>radarPlay(RADAR.timer==null);
 setInterval(()=>{if(RADAR.on&&navigator.onLine)radarLoad().then(()=>{radarRemove();radarAdd();}).catch(()=>{});},10*60*1000);
 const bmSel=document.getElementById('basemap');
 let BM_KEY='calles';try{const v=localStorage.getItem('vm-basemap');if(BASEMAPS[v])BM_KEY=v;}catch{}
@@ -780,14 +791,14 @@ function frame(){
   }
   const sd=FX.screenWind;
   // nubes: masas suaves que se desplazan con el viento
-  for(const c of clouds){if(!c)continue;c.x+=sd[0]*FX.spd*0.00002*c.s;c.y+=sd[1]*FX.spd*0.00002*c.s;
+  if(!RADAR.on)for(const c of clouds){if(!c)continue;c.x+=sd[0]*FX.spd*0.00002*c.s;c.y+=sd[1]*FX.spd*0.00002*c.s;
     if(c.x<-.3)c.x+=1.6;if(c.x>1.3)c.x-=1.6;if(c.y<-.3)c.y+=1.6;if(c.y>1.3)c.y-=1.6;
     const x=c.x*W,y=c.y*H,r=c.r*Math.max(W,H);
     let g=sctx.createRadialGradient(x+r*.15,y+r*.25,0,x+r*.15,y+r*.25,r);g.addColorStop(0,'rgba(30,40,50,.13)');g.addColorStop(1,'rgba(30,40,50,0)');sctx.fillStyle=g;sctx.fillRect(x-r,y-r,r*2.4,r*2.4);
     const col=FX.cond==='rain'?'150,160,170':FX.cond==='night'?'70,80,100':'255,255,255';
     g=sctx.createRadialGradient(x,y,0,x,y,r*.9);g.addColorStop(0,`rgba(${col},.30)`);g.addColorStop(.6,`rgba(${col},.12)`);g.addColorStop(1,`rgba(${col},0)`);sctx.fillStyle=g;sctx.fillRect(x-r,y-r,r*2,r*2);}
   // lluvia o nieve inclinada por el viento
-  const target=Math.min(900,Math.round(FX.rain*260+(FX.cond==='rain'?60:0)));
+  const target=RADAR.on?0:Math.min(900,Math.round(FX.rain*260+(FX.cond==='rain'?60:0))); // con el radar puesto, solo se ve la lluvia real
   while(drops.length<target)drops.push({x:Math.random()*W,y:Math.random()*H,v:.8+Math.random()*.5,l:8+Math.random()*10});drops.length=target;
   if(target){const vx=sd[0]*Math.min(1,FX.spd/30)*(FX.snow?2:5);
     sctx.strokeStyle=FX.snow?'rgba(255,255,255,.9)':'rgba(70,105,150,.55)';sctx.fillStyle='rgba(255,255,255,.9)';sctx.lineWidth=1.2;sctx.beginPath();
@@ -816,6 +827,7 @@ function updateHud(now,w){
   document.getElementById('hudIcon').innerHTML=wxIcon(FX.code,day,52);
   document.getElementById('hudTemp').textContent=`${fmtNum(t)} °C · sensación ${Math.round(ta)}°`;
   document.getElementById('hudWind').textContent=`Viento del ${cardinal(w.dir)} ${Math.round(w.spd)} km/h · rachas ${Math.round(w.gust)}`;
+  document.getElementById('hudSun').textContent=sunText(now);
   document.getElementById('hudSky').textContent=`Nubes ${Math.round(FX.cloud)} % · lluvia ${fmtNum(FX.rain)} mm${pp!=null?` (${Math.round(pp)} %)`:''} · sol ${day?Math.round(FX.sun.alt)+'° sobre el horizonte':'bajo el horizonte'}`;
   drawCompass(w);
 }
@@ -838,6 +850,17 @@ function rotateWindMarkers(){const b=map.getBearing();windMarkers.forEach((m,k)=
 requestAnimationFrame(frame);
 
 // ---------- panel ----------
+function sunTimes(){
+  if(!S.wxMeta||!S.date||!S.route)return null;const key=S.date+S.route[0].lat;if(S.sunT?.key===key)return S.sunT;
+  const p=S.route[Math.floor(S.route.length/2)];let rise=null,set=null,prev=null;
+  for(let m=0;m<=1440;m+=1){const a=sunPos(utcMs(m),p.lat,p.lon).alt+0.833;
+    if(prev!=null){if(prev<0&&a>=0&&rise==null)rise=m;if(prev>=0&&a<0)set=m;}prev=a;}
+  return S.sunT={key,rise,set};}
+const fmtLeft=min=>{min=Math.round(min);const h=Math.floor(min/60),m=min%60;return h?`${h} h ${String(m).padStart(2,'0')} min`:`${m} min`;};
+function sunText(now){const t=sunTimes();if(!t||t.set==null)return '';
+  if(t.rise!=null&&now<t.rise)return `Amanece a las ${fmtClock(t.rise)} · puesta de sol a las ${fmtClock(t.set)}`;
+  if(now>=t.set)return `El sol se puso a las ${fmtClock(t.set)}`;
+  return `Puesta de sol a las ${fmtClock(t.set)} · faltan ${fmtLeft(t.set-now)}`;}
 function routeIdxAtMin(m){return Math.min(S.route.length-1,Math.max(0,Math.round((m/S.pace)*1000/STEP)));}
 function update(){
   if(!S.wx)return;
@@ -878,6 +901,8 @@ function summarize(){
     <div class="stat"><b>${Math.round(gMax)}</b><small>km/h rachas máx.</small></div>
     <div class="stat"><b>${S.wxMeta.archive?fmtNum(rain)+' mm':Math.round(pMax)+' %'}</b><small>${S.wxMeta.archive?'lluvia máx./h':'prob. lluvia máx.'}</small></div>
     <div class="stat"><b>${Math.round(cl/n)} %</b><small>nubosidad media</small></div>
+    ${(()=>{const st=sunTimes();if(!st||st.set==null)return '';const mg=st.set-s1;
+      return `<div class="stat"><b${mg<30?` style="color:${css('--head')}"`:''}>${fmtClock(st.set)}</b><small>puesta de sol · ${mg>=0?'llegas '+fmtLeft(mg)+' antes':'llegas '+fmtLeft(-mg)+' después'}</small></div>`;})()}
     <div class="stat" style="grid-column:1/-1"><span class="chip" style="color:${css(conf[1])};align-self:start">${conf[0]}</span></div>`;
   const Wn=Math.round(500/STEP),chunks=[];
   for(let i=0;i<heads.length;i+=Wn){const sl=heads.slice(i,i+Wn);if(sl.length<Wn/2)continue;chunks.push({i,j:Math.min(heads.length-1,i+Wn),v:sl.reduce((a,b)=>a+b,0)/sl.length});}
@@ -1195,6 +1220,9 @@ function onGps(pos){
       <span><i>Bajada</i><b>−${fmtM(ev.dnDone)}</b> hecha</span><span><b>−${fmtM(ev.dnLeft)}</b> por delante</span></span>`:''}
     <span class="row"><span>Llegada aprox. <b>${eta.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}</b> (${fmtDur(minsLeft)} al ritmo previsto)</span></span>
     ${here}
+    ${(()=>{const st=sunTimes(),nm=routeNowMin();if(!st||st.set==null||nm==null||nm<0||nm>1440)return '';
+      const etaM=nm+minsLeft,late=etaM-st.set;
+      return `<span class="row sunline">${sunText(nm)}</span>${late>0&&nm<st.set?`<span class="warn">Llegarías unos ${fmtLeft(late)} después de la puesta de sol: ten a mano la linterna frontal.</span>`:''}`;})()}
     <span class="row"><span>Precisión del GPS: ±${Math.round(acc)} m</span></span>
     <span class="acts"><button type="button" id="gpsCenter">${gpsFollow?'Siguiéndote':'Centrar en mí'}</button><button type="button" id="gpsStop">Dejar de localizar</button></span>`;
   document.getElementById('gpsCenter').onclick=()=>{gpsFollow=true;map.easeTo({center:[lon,lat],zoom:Math.max(map.getZoom(),15)});};
