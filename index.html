@@ -377,6 +377,9 @@ const fmtClock=min=>{min=((min%1440)+1440)%1440;const h=Math.floor(min/60),m=Mat
 const fmtDur=min=>{const h=Math.floor(min/60),m=Math.round(min%60);return h?`${h} h ${String(m).padStart(2,'0')}`:`${m} min`;};
 const PTS=['N','NE','E','SE','S','SO','O','NO'];
 const cardinal=d=>PTS[Math.round(d/45)%8];
+// rumbo del viento (de dónde viene) y velocidad: «del NE (45°) · 12 km/h»
+const windStr=w=>`del ${cardinal(w.dir)} (${Math.round(w.dir)}°) · ${Math.round(w.spd)} km/h`;
+const MG_W=48;
 const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // posición del sol (algoritmo de SunCalc, simplificado)
@@ -843,7 +846,7 @@ function updateHud(now,w){
   document.getElementById('hudCond').textContent=(!day&&FX.code<=2?'Noche despejada':wmo(FX.code));
   document.getElementById('hudIcon').innerHTML=wxIcon(FX.code,day,52);
   document.getElementById('hudTemp').textContent=`${fmtNum(t)} °C · sensación ${Math.round(ta)}°`;
-  document.getElementById('hudWind').textContent=`Viento del ${cardinal(w.dir)} ${Math.round(w.spd)} km/h · rachas ${Math.round(w.gust)}`;
+  document.getElementById('hudWind').textContent=`Viento ${windStr(w)} · rachas ${Math.round(w.gust)} km/h`;
   document.getElementById('hudSun').textContent=sunText(now);
   document.getElementById('hudSky').textContent=`Nubes ${Math.round(FX.cloud)} % · lluvia ${fmtNum(FX.rain)} mm${pp!=null?` (${Math.round(pp)} %)`:''} · sol ${day?Math.round(FX.sun.alt)+'° sobre el horizonte':'bajo el horizonte'}`;
   drawCompass(w);
@@ -863,7 +866,7 @@ map.on('move',()=>{tctx.clearRect(0,0,W,H);particles.forEach(p=>p.px=null);
   if(S.wx&&FX.wind.length){const p=S.route[routeIdxAtMin(+slider.value)];const w=FX.wind[p.s];FX.screenWind=screenDir(p.lat,p.lon,w.u,w.v);
     drawCompass(w);rotateWindMarkers();}});
 function rotateWindMarkers(){const b=map.getBearing();windMarkers.forEach((m,k)=>{const w=FX.wind[k];if(!w||!m)return;
-  const el=m.getElement();el.querySelector('svg').style.transform=`rotate(${(w.dir+180-b)}deg)`;el.querySelector('span').textContent=`${Math.round(w.spd)} km/h`;el.title=`Viento del ${cardinal(w.dir)} · rachas ${Math.round(w.gust)} km/h`;});}
+  const el=m.getElement();el.querySelector('svg').style.transform=`rotate(${(w.dir+180-b)}deg)`;el.querySelector('span').textContent=`${cardinal(w.dir)} ${Math.round(w.spd)} km/h`;el.title=`Viento del ${cardinal(w.dir)} · rachas ${Math.round(w.gust)} km/h`;});}
 requestAnimationFrame(frame);
 
 // ---------- panel ----------
@@ -889,9 +892,9 @@ function update(){
   const x=wxAtRace(m);
   const evc=elevAt(i);
   clock.innerHTML=`<span class="el"><small>Tiempo transcurrido</small>${fmtElapsed(m)}</span>${wxIcon(x.code,x.day,30)}
-    <span class="det"><b>km ${fmtKm(p.d)}</b> de ${fmtKm(S.total)} · hora ${fmtClock(now)}${evc?` · altitud <b>${fmtM(evc.alt)}</b>`:''}${evc?`<br>subida <b>+${fmtM(evc.upDone)}</b> hecha · <b>+${fmtM(evc.upLeft)}</b> por delante<br>bajada <b>−${fmtM(evc.dnDone)}</b> hecha · <b>−${fmtM(evc.dnLeft)}</b> por delante`:''}<br>${fmtNum(x.t)} °C · viento ${Math.round(w.spd)} km/h</span>`;
+    <span class="det"><b>km ${fmtKm(p.d)}</b> de ${fmtKm(S.total)} · hora ${fmtClock(now)}${evc?` · altitud <b>${fmtM(evc.alt)}</b>`:''}${evc?`<br>subida <b>+${fmtM(evc.upDone)}</b> hecha · <b>+${fmtM(evc.upLeft)}</b> por delante<br>bajada <b>−${fmtM(evc.dnDone)}</b> hecha · <b>−${fmtM(evc.dnLeft)}</b> por delante`:''}<br>${fmtNum(x.t)} °C · viento ${windStr(w)}</span>`;
   document.querySelectorAll('.hour').forEach(el=>el.classList.toggle('on',Math.abs(+el.dataset.m-m)<0.5));
-  {const ln=document.getElementById('mgNow');if(ln){const x=8+(now/60)*34;ln.setAttribute('x1',x);ln.setAttribute('x2',x);}}
+  {const ln=document.getElementById('mgNow');if(ln){const x=8+(now/60)*MG_W;ln.setAttribute('x1',x);ln.setAttribute('x2',x);}}
   rotateWindMarkers();
   windMarkers.forEach((mk,k)=>{const ww=FX.wind[k];if(!mk)return;mk.getPopup().setHTML(`<b>${fmtClock(now)}</b><br>Viento del ${cardinal(ww.dir)} (${Math.round(ww.dir)}°), ${Math.round(ww.spd)} km/h<br>Rachas ${Math.round(ww.gust)} km/h<br>Temp. ${fmtNum(at(k,'temperature_2m',now))} °C`);});
   if(mode==='now'){S.head=computeHead('now',now);colorRoute(S.head);}
@@ -949,15 +952,15 @@ function tempColor(t){if(t==null)return '#888';for(let i=1;i<TSCALE.length;i++){
   if(t<=b){const k=Math.max(0,Math.min(1,(t-a)/(b-a))),A=hexToRgb(ca),B=hexToRgb(cb);return `rgb(${A.map((v,j)=>Math.round(v+(B[j]-v)*k)).join(',')})`;}}return TSCALE[TSCALE.length-1][1];}
 function renderMeteogram(){
   const el=document.getElementById('mgram');if(!S.wx){el.innerHTML='';return;}
-  const k=S.route[Math.floor(S.route.length/2)].s,W=34,L=8,H=0,hrs=[...Array(24).keys()];
+  const k=S.route[Math.floor(S.route.length/2)].s,W=MG_W,L=8,H=0,hrs=[...Array(24).keys()];
   const T=hrs.map(h=>at(k,'temperature_2m',h*60)),Pm=hrs.map(h=>S.wx[k].precipitation?.[h]??0),Pp=hrs.map(h=>S.wx[k].precipitation_probability?.[h]??null);
   const tMin=Math.min(...T),tMax=Math.max(...T),y0=78,y1=150,Y=t=>y1-(t-tMin)/Math.max(4,tMax-tMin)*(y1-y0);
-  const X=h=>L+h*W+W/2,width=L*2+24*W,height=262;
+  const X=h=>L+h*W+W/2,width=L*2+24*W,height=282;
   const d=new Date(S.date+'T12:00:00');document.getElementById('mgTitle').textContent='Hora a hora · '+d.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});
   const s0=S.startMin/60,s1=(S.startMin+duration())/60;
   let g=`<defs><linearGradient id="tg" x1="0" x2="${width}" gradientUnits="userSpaceOnUse">${hrs.map(h=>`<stop offset="${(X(h)/width).toFixed(4)}" stop-color="${tempColor(T[h])}"/>`).join('')}</linearGradient></defs>`;
   // horario de la ruta
-  g+=`<rect x="${L+s0*W}" y="0" width="${Math.max(4,(s1-s0)*W)}" height="${height}" fill="rgba(255,255,255,.09)"/><text x="${L+s0*W+5}" y="${height-6}" font-size="10" opacity=".8">ruta ${fmtClock(S.startMin)}–${fmtClock(S.startMin+duration())}</text>`;
+  g+=`<rect x="${L+s0*W}" y="0" width="${Math.max(4,(s1-s0)*W)}" height="${height}" fill="rgba(255,255,255,.09)"/><text x="${L+s0*W+5}" y="66" font-size="10" opacity=".85">ruta ${fmtClock(S.startMin)}–${fmtClock(S.startMin+duration())}</text>`;
   hrs.forEach(h=>{const x=X(h),code=S.wx[k].weather_code?.[h],day=sunPos(utcMs(h*60+30),S.route[0].lat,S.route[0].lon).alt>-0.8;
     g+=`<text x="${x}" y="15" font-size="10" text-anchor="middle" opacity=".75">${String(h).padStart(2,'0')}</text>`;
     g+=`<g transform="translate(${x-12},22)">${wxIcon(code,day,24).replace('<svg','<svg x="0" y="0"')}</g>`;
@@ -969,7 +972,9 @@ function renderMeteogram(){
   hrs.forEach(h=>{const x=X(h),mm=Pm[h],bh=Math.min(1,mm/4)*(pr1-pr0);
     if(mm>=0.1){g+=`<rect x="${x-9}" y="${pr1-bh}" width="18" height="${Math.max(2,bh)}" rx="2" fill="#4aa3ff"/><text x="${x}" y="${pr1-bh-3}" font-size="9" text-anchor="middle" fill="#bfe0ff">${fmtNum(mm)}</text>`;}
     if(Pp[h]!=null)g+=`<text x="${x}" y="${pr1+12}" font-size="9" text-anchor="middle" opacity="${Pp[h]>=30?1:.55}" fill="${Pp[h]>=30?'#7cc4ff':'#dfe9f1'}">${Pp[h]}%</text>`;
-    const w=windAt(k,h*60);g+=`<g transform="translate(${x},238) rotate(${w.dir+180})"><path d="M0,-6 L4,5 L0,3 L-4,5Z" fill="#dfe9f1"/></g><text x="${x}" y="253" font-size="9" text-anchor="middle" opacity=".8">${Math.round(w.spd)}</text>`;});
+    const w=windAt(k,h*60);g+=`<g transform="translate(${x},236) rotate(${w.dir+180})"><path d="M0,-6 L4,5 L0,3 L-4,5Z" fill="#dfe9f1"/></g>
+      <text x="${x}" y="254" font-size="9" font-weight="600" text-anchor="middle">${cardinal(w.dir)} ${Math.round(w.dir)}°</text>
+      <text x="${x}" y="268" font-size="9" text-anchor="middle" opacity=".85">${Math.round(w.spd)} km/h</text>`;});
   // momento elegido en la línea de tiempo
   const nowH=(S.startMin+(+slider.value||0))/60;g+=`<line id="mgNow" x1="${L+nowH*W}" x2="${L+nowH*W}" y1="20" y2="${height-14}" stroke="var(--sun)" stroke-width="2"/>`;
   el.innerHTML=`<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="Previsión hora a hora del día de la ruta">${g}</svg>`;
@@ -981,7 +986,7 @@ function renderHours(){
   const el=document.getElementById('hours');
   el.innerHTML=marks.map(m=>{const x=wxAtRace(m);
     return `<button type="button" class="hour" data-m="${m}" title="${wmo(x.code)}"><span class="h">${m===dur?'Meta':fmtElapsed(m).slice(0,-3)}</span><span>${fmtClock(x.now)}</span>${wxIcon(x.code,x.day,30)}
-      <span class="tt">${Math.round(x.t)}°</span><span><svg width="10" height="10" viewBox="0 0 10 10" style="transform:rotate(${x.w.dir+180}deg)"><path d="M5 0 L9 9 L5 7 L1 9Z" fill="${css('--accent')}"/></svg> ${Math.round(x.w.spd)}</span>
+      <span class="tt">${Math.round(x.t)}°</span><span><svg width="10" height="10" viewBox="0 0 10 10" style="transform:rotate(${x.w.dir+180}deg)"><path d="M5 0 L9 9 L5 7 L1 9Z" fill="${css('--accent')}"/></svg> ${cardinal(x.w.dir)} ${Math.round(x.w.dir)}°</span><span>${Math.round(x.w.spd)} km/h</span>
       <span>${x.pp!=null?Math.round(x.pp)+' %':fmtNum(x.rain)+' mm'}</span></button>`;}).join('');
   el.querySelectorAll('.hour').forEach(b=>b.onclick=()=>{slider.value=b.dataset.m;update();});
 }
@@ -1080,7 +1085,7 @@ prof.addEventListener('pointerdown',e=>{if(!S.wx)return;scrubbing=true;prof.setP
 prof.addEventListener('pointerup',e=>{scrubbing=false;if(e.pointerType!=='mouse')tip.hidden=true;});
 prof.addEventListener('pointermove',e=>{if(!S.wx)return;if(scrubbing)scrub(e);
   const d=Math.max(0,Math.min(S.total,(e.offsetX-36)/(prof.clientWidth-44)*S.total)),m=d/1000*S.pace,x=wxAtRace(m);const ev=elevAt(routeIdxAtMin(m));
-  tip.innerHTML=`<b>${fmtElapsed(m)}</b>${wxIcon(x.code,x.day,24)}<span>km ${fmtKm(d)} · ${fmtClock(x.now)}${ev?' · '+fmtM(ev.alt):''}${ev?`<br>quedan +${fmtM(ev.upLeft)} / −${fmtM(ev.dnLeft)}`:''}<br>${fmtNum(x.t)} °C · ${x.head>=0?'cara':'favor'} ${Math.abs(x.head).toFixed(0)} km/h</span>`;
+  tip.innerHTML=`<b>${fmtElapsed(m)}</b>${wxIcon(x.code,x.day,24)}<span>km ${fmtKm(d)} · ${fmtClock(x.now)}${ev?' · '+fmtM(ev.alt):''}${ev?`<br>quedan +${fmtM(ev.upLeft)} / −${fmtM(ev.dnLeft)}`:''}<br>${fmtNum(x.t)} °C · viento ${windStr(x.w)}</span>`;
   tip.hidden=false;const left=Math.min(prof.offsetLeft+e.offsetX+12,prof.parentElement.clientWidth-tip.offsetWidth-8);
   tip.style.left=left+'px';tip.style.top=(prof.offsetTop-tip.offsetHeight-6)+'px';});
 prof.addEventListener('pointerleave',()=>{if(!scrubbing)tip.hidden=true;});
@@ -1260,7 +1265,7 @@ function onGps(pos){
     if(!S.live||Math.abs(S.live.startMin-live)>2||Date.now()-gpsLastSum>5*60*1000){S.live={startMin:live};S.startMin=live;gpsLastSum=Date.now();
       summarize();colorRoute(modeSel.value==='now'?computeHead('now',nowM):S.passHead);}
     slider.value=Math.min(+slider.max,p.d/1000*S.pace).toFixed(2);update();
-    const x=wxAtRace(p.d/1000*S.pace);here=`<span class="row">${wxIcon(x.code,x.day,24)}<span>Ahora aquí: <b>${fmtNum(x.t)} °C</b> · viento del ${cardinal(x.w.dir)} <b>${Math.round(x.w.spd)} km/h</b></span></span>`;}
+    const x=wxAtRace(p.d/1000*S.pace);here=`<span class="row">${wxIcon(x.code,x.day,24)}<span>Ahora aquí: <b>${fmtNum(x.t)} °C</b> · viento <b>${windStr(x.w)}</b></span></span>`;}
   else{slider.value=Math.min(+slider.max,p.d/1000*S.pace).toFixed(2);update();}
   const off=m.d>120;
   gpsCard.hidden=false;
