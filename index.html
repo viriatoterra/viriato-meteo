@@ -82,18 +82,7 @@ h1,h2{font-family:var(--display);font-weight:700;letter-spacing:.01em;margin:0;t
 .gpscard .acts button{font-size:12px;padding:4px 9px}
 .me{width:20px;height:20px;border-radius:50%;background:#2b7de9;border:3px solid #fff;box-shadow:0 0 0 2px #2b7de9,0 0 0 10px rgba(43,125,233,.25)}
 .fc{display:flex;flex-direction:column;gap:8px}
-.days{display:flex;gap:4px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x proximity}
-.day{flex:none;width:76px;display:flex;flex-direction:column;align-items:center;gap:3px;padding:0 0 8px;border-radius:10px;background:#1c2b3a;color:#e9f0f5;cursor:pointer;border:0;font:inherit;scroll-snap-align:start;overflow:hidden}
-.day .dn{width:100%;padding:6px 2px 4px;background:#2a3d50;font:700 13px/1.1 var(--display);text-transform:uppercase;letter-spacing:.04em;text-align:center}
-.day .dn small{display:block;font:500 10px var(--body);letter-spacing:0;opacity:.75;text-transform:none}
-.day .sky{width:100%;display:flex;justify-content:center;padding:4px 0;background:linear-gradient(#3f8fd6,#5aa7e6)}
-.day .tb{font:700 14px/1 var(--body);padding:3px 7px;border-radius:5px;color:#1a1a1a;min-width:40px;text-align:center}
-.day .mt{font-size:11px;display:flex;align-items:center;gap:3px;opacity:.92;font-variant-numeric:tabular-nums}
-.day .mt svg{width:11px;height:11px;flex:none}
-.day.on{box-shadow:0 0 0 2px var(--sun);background:#0d1822}
-.day.on .dn{background:#0d1822;color:var(--sun)}
-.day:disabled{opacity:.45;cursor:default}
-.mgram-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-top:4px}
+.mgram-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
 .mgram-head b{font:700 15px var(--display);text-transform:uppercase;letter-spacing:.04em}
 .mgram{overflow-x:auto;border-radius:12px;background:linear-gradient(#173a5c,#0e1f30 55%);-webkit-overflow-scrolling:touch}
 .mgram svg{display:block}
@@ -307,7 +296,6 @@ dialog a.btn{display:inline-block;text-decoration:none;font-weight:600;border-ra
   <aside class="panel">
     <div class="fc">
       <h2>Previsión</h2>
-      <div class="days" id="days"><div class="note">Cargando la semana…</div></div>
       <div class="mgram-head"><b id="mgTitle">Hora a hora</b><span class="note">La franja clara es el horario de la ruta</span></div>
       <div class="mgram" id="mgram"></div>
     </div>
@@ -949,7 +937,7 @@ function summarize(){
     hot.appendChild(li);});
   S.hotData={type:'FeatureCollection',features:top.map(c=>({type:'Feature',properties:{},geometry:{type:'LineString',coordinates:S.route.slice(c.i,c.j+1).map(p=>[p.lon,p.lat])}}))};
   map.getSource('hot')?.setData(S.hotData);
-  renderStarts();renderHours();renderGear();renderMeteogram();renderDays();
+  renderStarts();renderHours();renderGear();renderMeteogram();
   const c=S.samples[0];
   document.getElementById('notes').innerHTML=`Datos: ${S.wxMeta.archive?'reanálisis histórico':'previsión'} de <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (viento a 10 m, ${S.samples.length} puntos del recorrido, zona ${S.wxMeta.tz}). El sol se calcula por posición astronómica; nubes y lluvia son las del modelo para cada hora. A ras de calle el viento suele ser menor y lo cambian edificios y arbolado. Contrasta con <a href="https://www.windy.com/?${c.lat},${c.lon},13" target="_blank" rel="noopener">Windy</a> o <a href="https://www.aemet.es/es/eltiempo/prediccion/municipios" target="_blank" rel="noopener">AEMET</a>. Mapa © OpenStreetMap / OpenFreeMap.`;
 }
@@ -959,29 +947,6 @@ function summarize(){
 const TSCALE=[[-10,'#8b6fd6'],[0,'#5b8ff0'],[5,'#45c1d8'],[10,'#4fc76a'],[15,'#a6d846'],[20,'#f2e135'],[25,'#f7b432'],[30,'#f2762e'],[35,'#e0403a']];
 function tempColor(t){if(t==null)return '#888';for(let i=1;i<TSCALE.length;i++){const [a,ca]=TSCALE[i-1],[b,cb]=TSCALE[i];
   if(t<=b){const k=Math.max(0,Math.min(1,(t-a)/(b-a))),A=hexToRgb(ca),B=hexToRgb(cb);return `rgb(${A.map((v,j)=>Math.round(v+(B[j]-v)*k)).join(',')})`;}}return TSCALE[TSCALE.length-1][1];}
-const arrowSvg=(dir,c='currentColor')=>`<svg viewBox="0 0 10 10" style="transform:rotate(${dir+180}deg)"><path d="M5 0 L9 9 L5 7 L1 9Z" fill="${c}"/></svg>`;
-const dropSvg='<svg viewBox="0 0 10 10"><path d="M5 0C6.5 2.5 8 4 8 6a3 3 0 0 1-6 0c0-2 1.5-3.5 3-6z" fill="#7cc4ff"/></svg>';
-const sunSvg='<svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="2.6" fill="#f6c343"/><g stroke="#f6c343" stroke-width="1" stroke-linecap="round"><path d="M5 .5v1.3M5 8.2v1.3M.5 5h1.3M8.2 5h1.3M1.8 1.8l.9.9M7.3 7.3l.9.9M1.8 8.2l.9-.9M7.3 2.7l.9-.9"/></g></svg>';
-async function loadDaily(){if(!S.route)return null;const p=S.route[Math.floor(S.route.length/2)];
-  const q=new URLSearchParams({latitude:p.lat.toFixed(3),longitude:p.lon.toFixed(3),daily:'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_direction_10m_dominant,sunshine_duration',timezone:'auto',forecast_days:'10',wind_speed_unit:'kmh'});
-  const key='https://api.open-meteo.com/v1/forecast?'+q;
-  try{const r=await fetch(key,{signal:withTimeout(10000)});if(r.ok){const j=await r.json();saveWx(key,j);return j;}}catch{}
-  return loadWx(key)?.j||null;}
-async function renderDays(){const el=document.getElementById('days'),j=await loadDaily();
-  if(!j?.daily){el.innerHTML='<div class="note">Sin datos de la semana (sin conexión).</div>';return;}
-  const d=j.daily,today=new Date().toISOString().slice(0,10);
-  el.innerHTML=d.time.map((t,i)=>{const dt=new Date(t+'T12:00:00'),name=t===today?'Hoy':dt.toLocaleDateString('es-ES',{weekday:'short'}).replace('.','');
-    const mm=d.precipitation_sum[i],pp=d.precipitation_probability_max?.[i],sun=Math.round((d.sunshine_duration?.[i]||0)/3600);
-    return `<button type="button" class="day${t===S.date?' on':''}" data-d="${t}" title="Ver la previsión de la ruta para este día">
-      <span class="dn">${name}<small>${dt.getDate()}-${dt.getMonth()+1}</small></span>
-      <span class="sky">${wxIcon(d.weather_code[i],true,40)}</span>
-      <span class="tb" style="background:${tempColor(d.temperature_2m_max[i])}">${Math.round(d.temperature_2m_max[i])}°</span>
-      <span class="tb" style="background:${tempColor(d.temperature_2m_min[i])}">${Math.round(d.temperature_2m_min[i])}°</span>
-      <span class="mt">${arrowSvg(d.wind_direction_10m_dominant[i],'#e9f0f5')}${Math.round(d.wind_speed_10m_max[i])} km/h</span>
-      <span class="mt">${dropSvg}${mm>=0.1?fmtNum(mm)+' mm':'–'}${pp!=null&&mm>=0.1?' · '+pp+'%':''}</span>
-      <span class="mt">${sunSvg}${sun} h</span></button>`;}).join('');
-  el.querySelectorAll('.day').forEach(b=>b.onclick=()=>{if(b.dataset.d===S.date)return;dateIn.value=b.dataset.d;run();});
-  el.querySelector('.day.on')?.scrollIntoView({block:'nearest',inline:'center'});}
 function renderMeteogram(){
   const el=document.getElementById('mgram');if(!S.wx){el.innerHTML='';return;}
   const k=S.route[Math.floor(S.route.length/2)].s,W=34,L=8,H=0,hrs=[...Array(24).keys()];
