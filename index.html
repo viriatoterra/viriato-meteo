@@ -64,6 +64,33 @@ h1,h2{font-family:var(--display);font-weight:700;letter-spacing:.01em;margin:0;t
 .rcard span{font-size:13px;color:var(--muted)}
 .rcard .lg{grid-row:1/3;grid-column:2;display:flex;gap:6px}
 .rcard .lg img{height:40px;width:auto;background:#fff;border-radius:6px;padding:2px 4px;border:1px solid var(--line)}
+.orgbtn{display:inline-flex;align-items:center;gap:6px;font-weight:600}
+.orgbtn svg{width:18px;height:18px}
+.orgbtn.on{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+#orgDlg .chk{flex-direction:row;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink);margin:4px 0 8px}
+#orgDlg .chk input{width:auto;margin:0}
+#orgDlg .warn{color:var(--head);font-weight:600;font-size:13px;margin-bottom:8px}
+.org{display:flex;flex-direction:column;gap:8px;border:2px solid var(--accent);border-radius:12px;padding:12px}
+.orghead{display:flex;justify-content:space-between;align-items:center}
+.orghead button{font-size:12px;padding:4px 10px}
+.orgsum{display:flex;gap:6px;flex-wrap:wrap}
+.orgsum span{font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--bg);border:1px solid var(--line)}
+.orgalerts{display:flex;flex-direction:column;gap:6px}
+.orgalerts .al{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:8px;font-size:13px;font-weight:600;color:#fff}
+.orgalerts .al.sos{background:#d0312d}.orgalerts .al.off{background:#e07a1f}
+.orgalerts .al a,.orgalerts .al button{color:#fff;border-color:rgba(255,255,255,.6);background:transparent;font-size:12px;padding:3px 8px}
+.orglist{display:flex;flex-direction:column;gap:4px;max-height:420px;overflow-y:auto}
+.hkrow{display:grid;grid-template-columns:auto 1fr auto;gap:2px 10px;align-items:center;text-align:left;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);cursor:pointer}
+.hkrow:hover{border-color:var(--accent)}
+.hkrow .dot{width:12px;height:12px;border-radius:50%;grid-row:1/3}
+.hkrow b{font-size:14px}
+.hkrow .km{font:600 13px var(--mono);text-align:right}
+.hkrow .sub{font-size:12px;color:var(--muted);grid-column:2/4}
+.hk{display:flex;flex-direction:column;align-items:center;cursor:pointer}
+.hk i{width:16px;height:16px;border-radius:50%;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.hk span{margin-top:2px;font:600 11px var(--body);color:#13202a;background:rgba(255,255,255,.92);border-radius:999px;padding:1px 7px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.hk.sos i{animation:hkpulse 1s infinite}
+@keyframes hkpulse{0%,100%{box-shadow:0 0 0 0 rgba(208,49,45,.7)}50%{box-shadow:0 0 0 10px rgba(208,49,45,0)}}
 .gpsbtn{position:absolute;left:12px;top:58px;z-index:5;display:inline-flex;align-items:center;gap:6px;font-weight:600;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 11px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
 .gpsbtn svg{width:18px;height:18px}
 .gpsbtn.on{background:var(--accent);color:var(--surface);border-color:var(--accent)}
@@ -232,7 +259,7 @@ dialog a.btn{display:inline-block;text-decoration:none;font-weight:600;border-ra
     <div class="sub" id="setupSum"></div>
     <div class="wxage" id="wxAge"></div>
     <div class="sponsors" id="sponsors" hidden></div>
-    <div class="offbar"><button type="button" id="offBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 20h14"/></svg><span>Guardar para usar sin cobertura</span></button><span class="note" id="offInfo"></span><button type="button" class="routesbtn" id="routesBtn">Ver todas las rutas</button></div>
+    <div class="offbar"><button type="button" id="offBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 20h14"/></svg><span>Guardar para usar sin cobertura</span></button><span class="note" id="offInfo"></span><button type="button" class="routesbtn" id="routesBtn">Ver todas las rutas</button><button type="button" class="orgbtn" id="orgBtn" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 14.4c3 .2 5.5 2.6 5.5 5.6"/></svg><span>Organización</span></button></div>
   </div>
   <button type="button" id="setupBtn" class="setupbtn" aria-expanded="false">Ajustes</button>
   <form id="controls">
@@ -294,6 +321,13 @@ dialog a.btn{display:inline-block;text-decoration:none;font-weight:600;border-ra
   </section>
 
   <aside class="panel">
+    <section class="org" id="orgSec" hidden>
+      <div class="orghead"><h2>Senderistas en ruta</h2><button type="button" id="orgOut" class="small">Salir</button></div>
+      <div class="note" id="orgInfo"></div>
+      <div class="orgsum" id="orgSum"></div>
+      <div class="orgalerts" id="orgAlerts"></div>
+      <div class="orglist" id="orgList"></div>
+    </section>
     <div class="fc">
       <h2>Previsión</h2>
       <div class="mgram-head"><b id="mgTitle">Hora a hora</b><span class="note">La franja clara es el horario de la ruta</span></div>
@@ -342,6 +376,16 @@ dialog a.btn{display:inline-block;text-decoration:none;font-weight:600;border-ra
 </section>
 
 <div class="drop" id="drop" hidden>Suelta el GPX</div>
+<dialog id="orgDlg">
+  <h2>Organización</h2>
+  <div class="note">Para ver por dónde va cada senderista, escribe la <b>clave de organizador de Viriato Tracker</b> (la misma del panel de Tracker). Solo la necesita la organización.</div>
+  <form id="orgForm" method="dialog">
+    <input type="password" id="orgKey" autocomplete="current-password" placeholder="Clave de organizador" aria-label="Clave de organizador">
+    <label class="chk"><input type="checkbox" id="orgRemember" checked> Recordarla en este móvil</label>
+    <div class="warn" id="orgErr" hidden></div>
+    <div class="row"><button type="button" id="orgCancel">Cancelar</button><button type="submit" class="primary" id="orgGo">Entrar</button></div>
+  </form>
+</dialog>
 <dialog id="routesDlg">
   <h2>Rutas</h2>
   <div class="note">Elige una ruta para ver el tiempo que hará en cada tramo.</div>
@@ -372,6 +416,7 @@ function bearing(a,b){const y=Math.sin(rad(b.lon-a.lon))*Math.cos(rad(b.lat));
   return (deg(Math.atan2(y,x))+360)%360;}
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const fmtKm=m=>(m/1000).toFixed(1).replace('.',',');
+const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmtNum=(v,d=1)=>v.toFixed(d).replace('.',',');
 const fmtClock=min=>{min=((min%1440)+1440)%1440;const h=Math.floor(min/60),m=Math.floor(min%60);return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');};
 const fmtDur=min=>{const h=Math.floor(min/60),m=Math.round(min%60);return h?`${h} h ${String(m).padStart(2,'0')}`:`${m} min`;};
@@ -1023,6 +1068,8 @@ function drawProfile(cur){
   if(heads)for(let i=0;i<r.length-1;i++){g.fillStyle=WIND_ON?windColor(heads[i]):css('--line');g.fillRect(X(r[i].d),bot+4,Math.max(1,X(r[i+1].d)-X(r[i].d))+.5,strip);}
   g.fillStyle=css('--muted');const stepKm=S.total>25000?5:S.total>8000?2:1;
   for(let k=0;k*stepKm*1000<=S.total;k++)g.fillText(k*stepKm,X(k*stepKm*1000)-3,h-2);
+  if(typeof ORG!=='undefined'&&ORG.event)for(const e of ORG.entries){if(e.lat==null)continue;const x=X(Math.min(S.total,(e.km||0)*1000));
+    g.fillStyle=HK_COL[hkState(e)];g.beginPath();g.arc(x,bot+4+strip/2,5,0,7);g.fill();g.strokeStyle='#fff';g.lineWidth=1.5;g.stroke();}
   if(cur!=null){const x=X(r[cur].d);g.strokeStyle=css('--accent');g.lineWidth=2;g.beginPath();g.moveTo(x,top);g.lineTo(x,bot+strip+4);g.stroke();}
 }
 
@@ -1170,7 +1217,7 @@ async function openRouteSheet(id,over={}){
   if(o.d&&/^\d{4}-\d{2}-\d{2}$/.test(o.d)&&daysFromToday(o.d)>=-60)dateIn.value=o.d;
   if(o.m&&BASEMAPS[o.m]&&o.m!==BM_KEY){await mapReady;bmSel.value=o.m;bmSel.onchange();}
   S.routeId=id;S.routeCfg=c;S.eq=parseEq(o.eq);S.logos=(c.logos||[]).filter(l=>/^[\w\-\/.]+\.(png|jpe?g|webp|svg)$/i.test(l.src||''));S.logosTitle=c.logosTitle;renderSponsors();
-  await loadRoute(pts,c.n||name||id);slider.value=0;await run();updateOffInfo();
+  await loadRoute(pts,c.n||name||id);slider.value=0;await run();updateOffInfo();updateOrgBtn();
 }
 
 // ---------- refresco de la previsión ----------
@@ -1297,6 +1344,84 @@ function stopGps(keepCard){if(gpsWatch!=null)navigator.geolocation.clearWatch(gp
   runner.getElement().style.visibility='';if(S.live){S.live=null;run();}}
 gpsBtn.onclick=()=>gpsWatch!=null?stopGps():startGps();
 map.on('dragstart',()=>{if(gpsWatch!=null){gpsFollow=false;const b=document.getElementById('gpsCenter');if(b)b.textContent='Centrar en mí';}});
+
+// ---------- organización: senderistas en directo desde Viriato Tracker ----------
+// Los senderistas llevan la app Viriato Tracker (envía el GPS aunque el móvil esté bloqueado).
+// Aquí la organización, con la clave de organizador de Tracker, los ve sobre el mapa del tiempo.
+const TRACKER_URL=(()=>{try{return localStorage.getItem('vm-tracker-url')||'https://viriatotracker.onrender.com';}catch{return 'https://viriatotracker.onrender.com';}})();
+const ORG={key:null,event:null,timer:null,entries:[],alerts:[],markers:new Map(),at:null,err:null};
+const HK_COL={tracking:'#1a8f74',finished:'#1f5f8b',off:'#e07a1f',sos:'#d0312d',lost:'#8a949b',idle:'#b9c2c8',out:'#5d6b75'};
+async function trackerApi(path){const r=await fetch(TRACKER_URL+'/api/admin'+path,{headers:{Authorization:'Bearer '+ORG.key},cache:'no-store',signal:withTimeout(15000)});
+  if(r.status===401)throw Object.assign(new Error('La clave de organizador no es correcta.'),{auth:true});
+  if(!r.ok)throw new Error('Viriato Tracker no responde ('+r.status+').');return r.json();}
+function orgSaved(){try{return localStorage.getItem('vm-tracker-key')||'';}catch{return '';}}
+function updateOrgBtn(){const has=!!S.routeCfg?.tracker;const b=document.getElementById('orgBtn');b.hidden=!has;b.classList.toggle('on',!!ORG.event);
+  if(!has&&ORG.event)orgStop();}
+async function orgStart(key,remember){
+  ORG.key=key;const code=String(S.routeCfg.tracker).toUpperCase();
+  const evs=await trackerApi('/events');const ev=evs.find(e=>String(e.code).toUpperCase()===code);
+  if(!ev)throw new Error(`En Viriato Tracker no hay ningún evento con el código ${code}.`);
+  ORG.event=ev;try{if(remember)localStorage.setItem('vm-tracker-key',key);}catch{}
+  document.getElementById('orgSec').hidden=false;updateOrgBtn();
+  await orgPoll();clearInterval(ORG.timer);ORG.timer=setInterval(orgPoll,15000);
+  document.getElementById('orgSec').scrollIntoView({behavior:'smooth',block:'start'});}
+function orgStop(forget){clearInterval(ORG.timer);ORG.timer=null;ORG.event=null;ORG.key=null;ORG.entries=[];
+  ORG.markers.forEach(m=>m.remove());ORG.markers.clear();document.getElementById('orgSec').hidden=true;
+  if(forget){try{localStorage.removeItem('vm-tracker-key');}catch{}}updateOrgBtn();if(S.route&&S.wx)drawProfile(routeIdxAtMin(+slider.value));}
+function hkState(e){if(e.sos)return'sos';if(e.status==='finished')return'finished';if(e.off_course)return'off';
+  if(['dnf','dsq','dns'].includes(e.status))return'out';if(e.lat==null)return'idle';if(e.seen_ago_s!=null&&e.seen_ago_s>600)return'lost';return'tracking';}
+const HK_TXT={tracking:'En ruta',finished:'En meta',off:'Fuera de la ruta',sos:'SOS',lost:'Sin señal',idle:'Aún sin posición',out:'Retirado'};
+const agoTxt=s=>s==null?'sin datos':s<60?'hace '+s+' s':s<3600?'hace '+Math.round(s/60)+' min':'hace '+fmtLeft(s/60);
+async function orgPoll(){
+  if(!ORG.event)return;
+  try{const live=await trackerApi(`/events/${ORG.event.id}/live`);let alerts=[];try{alerts=await trackerApi(`/events/${ORG.event.id}/alerts`);}catch{}
+    ORG.entries=live.entries||[];ORG.routes=live.routes||[];ORG.alerts=alerts.filter(a=>!a.resolved_at);ORG.at=Date.now();ORG.err=null;}
+  catch(e){ORG.err=e.message;if(e.auth){orgStop(true);setStatus(e.message,true);document.getElementById('orgBtn').click();return;}}
+  renderOrg();}
+function renderOrg(){
+  const list=ORG.entries,info=document.getElementById('orgInfo');
+  info.textContent=(ORG.err?`⚠ ${ORG.err} · `:'')+`${ORG.event.name||ORG.event.code} · ${ORG.at?'actualizado a las '+new Date(ORG.at).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):''} · se actualiza cada 15 s`;
+  const count={};list.forEach(e=>{const st=hkState(e);count[st]=(count[st]||0)+1;});
+  document.getElementById('orgSum').innerHTML=Object.keys(HK_TXT).filter(k=>count[k]).map(k=>`<span style="border-color:${HK_COL[k]};color:${HK_COL[k]}">${count[k]} ${HK_TXT[k].toLowerCase()}</span>`).join('')||'<span>Aún no hay senderistas apuntados en Tracker</span>';
+  // alertas sin resolver: SOS primero
+  const al=[...list.filter(e=>e.sos).map(e=>({cls:'sos',e,txt:`SOS · ${e.name} (${e.bib})`})),...list.filter(e=>!e.sos&&e.off_course).map(e=>({cls:'off',e,txt:`Fuera de la ruta · ${e.name} (${e.bib})`}))];
+  document.getElementById('orgAlerts').innerHTML=al.map((a,i)=>`<div class="al ${a.cls}"><span>${esc(a.txt)}</span><span>${a.e.lat!=null?`<button type="button" data-i="${i}">Ver</button> <a href="https://www.google.com/maps?q=${a.e.lat},${a.e.lon}" target="_blank" rel="noopener">Google Maps</a>`:''}</span></div>`).join('');
+  document.getElementById('orgAlerts').querySelectorAll('button').forEach(b=>b.onclick=()=>orgFocus(al[+b.dataset.i].e));
+  // lista ordenada: alertas, en ruta (más avanzados primero), el resto
+  const ord={sos:0,off:1,lost:2,tracking:3,finished:4,idle:5,out:6};
+  const rows=[...list].sort((a,b)=>(ord[hkState(a)]-ord[hkState(b)])||(b.km-a.km));
+  const totKm=(id)=>{const r=(ORG.routes||[]).find(x=>x.id===id);return r?.length_m?r.length_m/1000:S.total/1000;};
+  document.getElementById('orgList').innerHTML=rows.map(e=>{const st=hkState(e),left=Math.max(0,totKm(e.route_id)-(e.km||0)),idx=Math.min(S.route.length-1,Math.round((e.km||0)*1000/STEP)),ev=elevAt(idx);
+    return `<button type="button" class="hkrow" data-id="${e.id}"><span class="dot" style="background:${HK_COL[st]}"></span><b>${esc(e.name||'Sin nombre')} <small class="muted">· ${esc(e.bib)}</small></b>
+      <span class="km">${st==='finished'?'en meta':'quedan '+fmtNum(left)+' km'}</span>
+      <span class="sub">${HK_TXT[st]} · km ${fmtNum(e.km||0)}${ev&&e.lat!=null?' · '+fmtM(ev.alt):''} · ${agoTxt(e.seen_ago_s)}${e.battery!=null?' · batería '+Math.round(e.battery*(e.battery<=1?100:1))+' %':''}</span></button>`;}).join('');
+  document.getElementById('orgList').querySelectorAll('.hkrow').forEach(b=>b.onclick=()=>orgFocus(list.find(e=>String(e.id)===b.dataset.id)));
+  // marcadores en el mapa
+  const seen=new Set();
+  list.forEach(e=>{if(e.lat==null)return;seen.add(e.id);const st=hkState(e);let m=ORG.markers.get(e.id);
+    if(!m){const el=document.createElement('div');el.className='hk';el.innerHTML='<i></i><span></span>';m=new maplibregl.Marker({element:el,anchor:'top'}).setLngLat([e.lon,e.lat]).addTo(map);
+      el.onclick=()=>orgFocus(ORG.entries.find(x=>x.id===e.id));ORG.markers.set(e.id,m);}
+    m.setLngLat([e.lon,e.lat]);const el=m.getElement();el.className='hk '+st;el.querySelector('i').style.background=HK_COL[st];
+    el.querySelector('span').textContent=`${(e.name||'').split(' ')[0]} ${e.bib}`;el.title=`${e.name} · ${HK_TXT[st]} · ${agoTxt(e.seen_ago_s)}`;});
+  ORG.markers.forEach((m,id)=>{if(!seen.has(id)){m.remove();ORG.markers.delete(id);}});
+  if(S.route&&S.wx)drawProfile(routeIdxAtMin(+slider.value));}
+function orgFocus(e){if(!e||e.lat==null)return;follow.checked=false;map.easeTo({center:[e.lon,e.lat],zoom:Math.max(map.getZoom(),14.5),duration:900});
+  const idx=Math.min(S.route.length-1,Math.round((e.km||0)*1000/STEP)),nowM=routeNowMin();
+  const k=S.route[idx].s,w=FX.wind.length&&nowM!=null?windAt(k,nowM):null,t=nowM!=null&&S.wx?at(k,'temperature_2m',nowM):null;
+  new maplibregl.Popup({offset:14}).setLngLat([e.lon,e.lat]).setHTML(`<b>${esc(e.name)}</b> · ${esc(e.bib)}<br>${HK_TXT[hkState(e)]} · km ${fmtNum(e.km||0)}<br>Última posición ${agoTxt(e.seen_ago_s)}${t!=null&&nowM>=0&&nowM<2880?`<br>Ahora allí: ${fmtNum(t)} °C · viento ${windStr(w)}`:''}`).addTo(map);}
+const orgDlg=document.getElementById('orgDlg');
+document.getElementById('orgBtn').onclick=async()=>{
+  if(ORG.event){document.getElementById('orgSec').scrollIntoView({behavior:'smooth',block:'start'});return;}
+  const saved=orgSaved();if(saved){try{await orgStart(saved,true);return;}catch(e){if(!e.auth){setStatus(e.message,true);return;}}}
+  document.getElementById('orgErr').hidden=true;document.getElementById('orgKey').value='';orgDlg.showModal();};
+document.getElementById('orgCancel').onclick=()=>orgDlg.close();
+document.getElementById('orgForm').onsubmit=async ev=>{ev.preventDefault();const key=document.getElementById('orgKey').value.trim(),err=document.getElementById('orgErr');
+  if(!key)return;const b=document.getElementById('orgGo');b.disabled=true;b.textContent='Comprobando…';
+  try{await orgStart(key,document.getElementById('orgRemember').checked);orgDlg.close();}
+  catch(e){err.textContent=e.message;err.hidden=false;}
+  b.disabled=false;b.textContent='Entrar';};
+document.getElementById('orgOut').onclick=()=>orgStop(true);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ORG.event)orgPoll();});
 
 // ---------- portada: rutas publicadas (rutas/index.json lo mantiene la app de edición) ----------
 const routesDlg=document.getElementById('routesDlg');
