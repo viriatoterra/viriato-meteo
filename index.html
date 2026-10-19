@@ -866,7 +866,7 @@ map.on('move',()=>{tctx.clearRect(0,0,W,H);particles.forEach(p=>p.px=null);
   if(S.wx&&FX.wind.length){const p=S.route[routeIdxAtMin(+slider.value)];const w=FX.wind[p.s];FX.screenWind=screenDir(p.lat,p.lon,w.u,w.v);
     drawCompass(w);rotateWindMarkers();}});
 function rotateWindMarkers(){const b=map.getBearing();windMarkers.forEach((m,k)=>{const w=FX.wind[k];if(!w||!m)return;
-  const el=m.getElement();el.querySelector('svg').style.transform=`rotate(${(w.dir+180-b)}deg)`;el.querySelector('span').textContent=`${cardinal(w.dir)} ${Math.round(w.spd)} km/h`;el.title=`Viento del ${cardinal(w.dir)} · rachas ${Math.round(w.gust)} km/h`;});}
+  const el=m.getElement();el.querySelector('svg').style.transform=`rotate(${(w.dir+180-b)}deg)`;el.querySelector('span').textContent=`${cardinal(w.dir)} ${Math.round(w.dir)}° · ${Math.round(w.spd)} km/h`;el.title=`Viento del ${cardinal(w.dir)} · rachas ${Math.round(w.gust)} km/h`;});}
 requestAnimationFrame(frame);
 
 // ---------- panel ----------
@@ -1233,7 +1233,7 @@ async function saveOffline(){
   }catch(e){setStatus('No se pudo guardar: '+e.message,true);}
   btn.disabled=false;updateOffInfo();}
 document.getElementById('offBtn').onclick=saveOffline;
-if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{});
 
 // ---------- GPS: dónde estás dentro de la ruta ----------
 const gpsBtn=document.getElementById('gpsBtn'),gpsCard=document.getElementById('gpsCard');

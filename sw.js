@@ -1,6 +1,6 @@
 // Service worker de Viriato Méteo: deja la web lista para abrirse sin cobertura.
 // Los mapas y la previsión los guarda la propia página (Cache API y localStorage).
-const SHELL = 'vm-shell-v3';
+const SHELL = 'vm-shell-v4';
 const INDEX = new URL('./', self.location).href; // copia canónica de la página
 const PRECACHE = [
   './',
@@ -32,7 +32,8 @@ self.addEventListener('fetch', e => {
   // Web, fichas, GPX y logos: primero la red (para tener lo último) y, sin cobertura, lo guardado.
   if (sameOrigin && !url.pathname.includes('/api/')) {
     const nav = req.mode === 'navigate';
-    e.respondWith(fetch(req).then(res => {
+    // siempre se pregunta al servidor si hay versión nueva (GitHub Pages deja 10 min de caché)
+    e.respondWith(fetch(nav ? req.url : new Request(req, { cache: 'no-cache' }), nav ? { cache: 'no-cache' } : undefined).then(res => {
       if (res.ok) {
         const copy = res.clone();
         // la página siempre se guarda también como copia canónica: sin cobertura se abre la última versión
