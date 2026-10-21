@@ -17,5 +17,14 @@
   ],
   "logosTitle": "Patrocinan",
   "tracker": "RUTA1LASHOJASMUERTAS",
-  "logos": []
+  "logos": [
+    {
+      "src": "logos/ayto-pepino.png",
+      "alt": "Ayuntamiento de Pepino"
+    },
+    {
+      "src": "logos/viriato-terra.png",
+      "alt": "Viriato Terra"
+    }
+  ]
 }

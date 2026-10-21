@@ -18,6 +18,9 @@
     "h": "09:00",
     "km": 11.6,
     "asc": 292,
-    "logos": []
+    "logos": [
+      "logos/ayto-pepino.png",
+      "logos/viriato-terra.png"
+    ]
   }
 ]
