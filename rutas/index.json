@@ -1,7 +1,7 @@
 [
   {
     "id": "ruta-12-castanar",
-    "n": "Ruta 12 · Castañar en apogeo",
+    "n": "Ruta 12 Castañar en apogeo #12meses12rutas3.0",
     "d": "2026-10-18",
     "h": "09:00",
     "km": 10.4,
@@ -10,5 +10,14 @@
       "logos/ayto-pepino.png",
       "logos/viriato-terra.png"
     ]
+  },
+  {
+    "id": "suunto-route",
+    "n": "Ruta 1 Las Hojas Muertas #12meses12rutas4.0",
+    "d": "2026-11-15",
+    "h": "09:00",
+    "km": 11.6,
+    "asc": 292,
+    "logos": []
   }
 ]
