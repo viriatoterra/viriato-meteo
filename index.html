@@ -1209,9 +1209,23 @@ async function openRouteSheet(id,over={}){
   if(!/^[\w-]+$/.test(id))throw new Error('Nombre de ruta no válido.');
   const res=await fetch(`rutas/${id}.json`);if(!res.ok)throw new Error('No se encontró la ruta publicada.');
   const c=await res.json(),o={...c,...Object.fromEntries(Object.entries(over).filter(([k,v])=>v&&['d','h','t','p','m','eq'].includes(k)))};
-  if(!/^[\w\-\/]+\.gpx$/i.test(c.gpx||''))throw new Error('La ficha de la ruta no trae un GPX válido.');
-  const g=await fetch(c.gpx);if(!g.ok)throw new Error('No se encontró el GPX de la ruta.');
-  const {pts,name}=parseGPX(await g.text());
+  // Recorrido de VIRIATO TRACKER (el origen): se carga actualizado; si falla, la copia de la ficha
+  let gpxText=null;
+  if(c.gpxFrom==='tracker'&&c.tracker){
+    const code=String(c.tracker).toUpperCase(),lsKey='vm-gpx-'+code+'-'+(c.trackerRoute||'');
+    try{
+      const rr=await fetch(`${TRACKER_URL}/api/events/${encodeURIComponent(code)}/routes`,{cache:'no-store',signal:withTimeout(12000)});
+      if(rr.ok){const d=await rr.json();const rt=(d.routes||[]).find(x=>String(x.id)===String(c.trackerRoute))||(d.routes||[])[0];
+        if(rt){const g=await fetch(TRACKER_URL+rt.gpxUrl,{cache:'no-store',signal:withTimeout(12000)});if(g.ok){const t=await g.text();if(t.includes('<trkpt')){gpxText=t;try{localStorage.setItem(lsKey,t);}catch{}}}}}
+    }catch{}
+    if(!gpxText){try{gpxText=localStorage.getItem(lsKey);}catch{}}
+  }
+  if(!gpxText){
+    if(!/^[\w\-\/]+\.gpx$/i.test(c.gpx||''))throw new Error('La ficha de la ruta no trae un GPX válido.');
+    const g=await fetch(c.gpx);if(!g.ok)throw new Error('No se encontró el GPX de la ruta.');
+    gpxText=await g.text();
+  }
+  const {pts,name}=parseGPX(gpxText);
   if(o.h)startIn.value=o.h;
   if(o.t&&parseDur(o.t)){goalIn.value=o.t;lastEdited='goal';}else if(o.p&&parsePace(o.p)){paceIn.value=o.p;lastEdited='pace';}
   if(o.d&&/^\d{4}-\d{2}-\d{2}$/.test(o.d)&&daysFromToday(o.d)>=-60)dateIn.value=o.d;
