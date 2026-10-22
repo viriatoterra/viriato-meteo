@@ -17,6 +17,8 @@
   ],
   "logosTitle": "Patrocinan",
   "tracker": "RUTA1LASHOJASMUERTAS",
+  "gpxFrom": "tracker",
+  "trackerRoute": 8,
   "logos": [
     {
       "src": "logos/ayto-pepino.png",
